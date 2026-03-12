@@ -50,28 +50,42 @@ router.use((req, res, next) => {
   next();
 });
 
+// Safe initialization function
+const initSupabase = () => {
+  if (supabase) return supabase;
+
+  const url = process.env.SUPABASE_URL || "";
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "";
+
+  if (url && key && isValidUrl(url) && !isPlaceholder(url) && !isPlaceholder(key)) {
+    try {
+      supabase = createClient(url, key, {
+        auth: {
+          persistSession: false // Critical for serverless environments
+        }
+      });
+      return supabase;
+    } catch (e) {
+      console.error("[API] Supabase init error:", e);
+      return null;
+    }
+  }
+  return null;
+};
+
+// Initialize once at module level
+initSupabase();
+
 // Middleware to check Supabase configuration
 router.use((req, res, next) => {
   if (req.path === '/api-health' || req.path === '/supabase-status') return next();
   
-  if (!supabase) {
-    // Re-attempt initialization if it failed initially
-    SUPABASE_URL = process.env.SUPABASE_URL || "";
-    SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "";
-    
-    if (SUPABASE_URL && SUPABASE_KEY && isValidUrl(SUPABASE_URL) && !isPlaceholder(SUPABASE_URL) && !isPlaceholder(SUPABASE_KEY)) {
-      try {
-        supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-      } catch (e) {
-        console.error("[API] Re-initialization failed:", e);
-      }
-    }
-  }
+  const client = initSupabase();
 
-  if (!supabase) {
+  if (!client) {
     return res.status(500).json({
       error: "Cấu hình Supabase không hợp lệ",
-      message: "Hệ thống chưa được cấu hình Supabase URL hoặc Service Role Key. Vui lòng kiểm tra file .env"
+      message: "Hệ thống chưa được cấu hình Supabase URL hoặc Service Role Key trên Vercel. Vui lòng kiểm tra Settings -> Environment Variables."
     });
   }
   next();
