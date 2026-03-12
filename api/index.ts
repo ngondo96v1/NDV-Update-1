@@ -511,48 +511,43 @@ router.post("/sync", async (req, res) => {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     const { users, loans, notifications, budget, rankProfit, loanProfit, monthlyStats } = req.body;
     
-    const tasks = [];
+    // Use a sequential approach for critical updates to prevent race conditions
+    // and ensure data integrity under high load
     
-    if (users && Array.isArray(users)) {
-      tasks.push(supabase.from('users').upsert(users, { onConflict: 'id' }));
+    if (users && Array.isArray(users) && users.length > 0) {
+      const { error } = await supabase.from('users').upsert(users, { onConflict: 'id' });
+      if (error) throw error;
     }
     
-    if (loans && Array.isArray(loans)) {
-      tasks.push(supabase.from('loans').upsert(loans, { onConflict: 'id' }));
+    if (loans && Array.isArray(loans) && loans.length > 0) {
+      const { error } = await supabase.from('loans').upsert(loans, { onConflict: 'id' });
+      if (error) throw error;
     }
     
-    if (notifications && Array.isArray(notifications)) {
-      tasks.push(supabase.from('notifications').upsert(notifications, { onConflict: 'id' }));
+    if (notifications && Array.isArray(notifications) && notifications.length > 0) {
+      const { error } = await supabase.from('notifications').upsert(notifications, { onConflict: 'id' });
+      if (error) throw error;
     }
     
-    if (budget !== undefined) {
-      tasks.push(supabase.from('config').upsert({ key: 'budget', value: budget }, { onConflict: 'key' }));
-    }
+    const configUpdates = [];
+    if (budget !== undefined) configUpdates.push({ key: 'budget', value: budget });
+    if (rankProfit !== undefined) configUpdates.push({ key: 'rankProfit', value: rankProfit });
+    if (loanProfit !== undefined) configUpdates.push({ key: 'loanProfit', value: loanProfit });
+    if (monthlyStats !== undefined) configUpdates.push({ key: 'monthlyStats', value: monthlyStats });
     
-    if (rankProfit !== undefined) {
-      tasks.push(supabase.from('config').upsert({ key: 'rankProfit', value: rankProfit }, { onConflict: 'key' }));
-    }
-
-    if (loanProfit !== undefined) {
-      tasks.push(supabase.from('config').upsert({ key: 'loanProfit', value: loanProfit }, { onConflict: 'key' }));
-    }
-
-    if (monthlyStats !== undefined) {
-      tasks.push(supabase.from('config').upsert({ key: 'monthlyStats', value: monthlyStats }, { onConflict: 'key' }));
-    }
-    
-    const results = await Promise.all(tasks);
-    const errors = results.filter(r => r.error).map(r => r.error);
-    
-    if (errors.length > 0) {
-      console.error("Sync errors:", errors);
-      return res.status(207).json({ success: false, errors });
+    if (configUpdates.length > 0) {
+      const { error } = await supabase.from('config').upsert(configUpdates, { onConflict: 'key' });
+      if (error) throw error;
     }
     
     sendSafeJson(res, { success: true });
   } catch (e: any) {
     console.error("Lỗi trong /api/sync:", e);
-    res.status(500).json({ error: "Internal Server Error", message: e.message });
+    res.status(500).json({ 
+      success: false,
+      error: "Internal Server Error", 
+      message: e.message || "Lỗi đồng bộ dữ liệu"
+    });
   }
 });
 

@@ -191,7 +191,8 @@ const App: React.FC = () => {
         // Use functional updates and deep comparison to avoid unnecessary re-renders
         // CRITICAL: Skip updates if an action is in progress OR just finished (cooldown)
         // to prevent "state reversion" from stale server data
-        const isCooldown = Date.now() - lastActionTimestamp.current < 3000;
+        // Increased cooldown to 8s to handle Supabase propagation delay under load
+        const isCooldown = Date.now() - lastActionTimestamp.current < 8000;
         if (isProcessingRef.current || isCooldown) {
           // Still schedule next fetch
           if (isMounted) {
