@@ -48,39 +48,28 @@ router.use((req, res, next) => {
   next();
 });
 
-// Middleware to check Supabase reachability
-router.use(async (req, res, next) => {
+// Middleware to check Supabase configuration
+router.use((req, res, next) => {
   if (req.path === '/api-health' || req.path === '/supabase-status') return next();
   
   if (!supabase) {
-    // Re-attempt initialization if it failed initially (maybe env vars weren't loaded)
+    // Re-attempt initialization if it failed initially
     SUPABASE_URL = process.env.SUPABASE_URL || "";
     SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "";
     
     if (SUPABASE_URL && SUPABASE_KEY && isValidUrl(SUPABASE_URL) && !isPlaceholder(SUPABASE_URL) && !isPlaceholder(SUPABASE_KEY)) {
-      console.log("[API] Re-initializing Supabase client...");
       try {
         supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
       } catch (e) {
         console.error("[API] Re-initialization failed:", e);
       }
     }
-
-    if (!supabase) {
-      return res.status(500).json({
-        error: "Cấu hình Supabase không hợp lệ",
-        message: "Hệ thống chưa được cấu hình Supabase URL hoặc Service Role Key. Vui lòng kiểm tra file .env"
-      });
-    }
   }
 
-  const reachability = await checkSupabaseReachability();
-  if (!reachability.reachable) {
-    console.error(`[API ERROR] Supabase unreachable for ${req.method} ${req.url}:`, reachability.error || reachability.status);
-    return res.status(503).json({
-      error: "Dịch vụ tạm thời không khả dụng",
-      message: "Không thể kết nối tới cơ sở dữ liệu Supabase. Có thể dự án đã bị tạm dừng hoặc đang gặp sự cố kỹ thuật (502 Bad Gateway).",
-      details: reachability.error || `Status: ${reachability.status}`
+  if (!supabase) {
+    return res.status(500).json({
+      error: "Cấu hình Supabase không hợp lệ",
+      message: "Hệ thống chưa được cấu hình Supabase URL hoặc Service Role Key. Vui lòng kiểm tra file .env"
     });
   }
   next();
@@ -209,20 +198,6 @@ router.get("/supabase-status", async (req, res) => {
     res.json({ connected: false, error: `Lỗi hệ thống: ${e.message}` });
   }
 });
-
-// Helper to check if Supabase is reachable
-const checkSupabaseReachability = async () => {
-  if (!SUPABASE_URL) return { reachable: false, error: "Supabase URL is missing" };
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch(SUPABASE_URL, { method: 'HEAD', signal: controller.signal });
-    clearTimeout(timeout);
-    return { reachable: response.ok || response.status < 500, status: response.status };
-  } catch (e: any) {
-    return { reachable: false, error: e.message };
-  }
-};
 
 // API Routes
 router.get("/data", async (req, res) => {
