@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AppView, User, UserRank, LoanRecord, Notification, MonthlyStat } from './types';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -15,6 +15,7 @@ import { User as UserIcon, Home, Briefcase, Medal, LayoutGrid, Users, Wallet, Al
 import { compressImage, generateContractId } from './utils';
 import BankUpdateWarning from './components/BankUpdateWarning';
 import DatabaseErrorModal from './components/DatabaseErrorModal';
+import { io, Socket } from 'socket.io-client';
 
 interface ErrorBoundaryProps {
   children?: React.ReactNode;
@@ -87,8 +88,9 @@ const App: React.FC = () => {
   const [storageUsage, setStorageUsage] = useState('0');
   const [isGlobalProcessing, setIsGlobalProcessing] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
-  const isProcessingRef = React.useRef(false);
-  const lastActionTimestamp = React.useRef<number>(0);
+  const isProcessingRef = useRef(false);
+  const lastActionTimestamp = useRef<number>(0);
+  const socketRef = useRef<Socket | null>(null);
 
   const hasBankInfo = (u: User | null) => {
     if (!u || u.isAdmin) return true;
@@ -129,9 +131,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let timeoutId: NodeJS.Timeout;
 
-    const fetchData = async (isInitial = false, retries = 2) => {
+    const fetchData = async (isInitial = false) => {
       if (!isMounted) return;
 
       const controller = new AbortController();
@@ -161,122 +162,157 @@ const App: React.FC = () => {
               else if (errorData.error) errorMessage = errorData.error;
               else if (errorData.details) errorMessage = `${errorMessage} (${errorData.details})`;
             } catch (e) {
-              // Not JSON, use the raw text if it's short and looks like a message
               if (text && text.length < 250 && !text.includes('<!DOCTYPE')) {
                 errorMessage = text;
               }
             }
-          } catch (e) {
-            // Error reading body
-          }
+          } catch (e) {}
           
-          // Detect database errors
           if (response.status === 500 || response.status === 503 || errorMessage.toLowerCase().includes('database') || errorMessage.toLowerCase().includes('supabase') || errorMessage.toLowerCase().includes('kết nối')) {
             setDbError(errorMessage);
           }
-          
           throw new Error(errorMessage);
         }
         
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
-          const text = await response.text();
-          console.error("Server returned non-JSON response:", text.substring(0, 200));
           throw new Error(`Server không trả về JSON (Status: ${response.status})`);
         }
 
         const data = await response.json();
         if (!isMounted) return;
         
-        // Use functional updates and deep comparison to avoid unnecessary re-renders
-        // CRITICAL: Skip updates if an action is in progress OR just finished (cooldown)
-        // to prevent "state reversion" from stale server data
-        // Increased cooldown to 8s to handle Supabase propagation delay under load
-        const isCooldown = Date.now() - lastActionTimestamp.current < 8000;
-        if (isProcessingRef.current || isCooldown) {
-          // Still schedule next fetch
-          if (isMounted) {
-            timeoutId = setTimeout(() => fetchData(false), 10000);
-          }
-          return;
-        }
-
-        if (data.loans) {
-          setLoans(prevLoans => {
-            if (JSON.stringify(prevLoans) === JSON.stringify(data.loans)) return prevLoans;
-            return data.loans;
-          });
-        }
-
-        if (data.users) {
-          setRegisteredUsers(prevUsers => {
-            if (JSON.stringify(prevUsers) === JSON.stringify(data.users)) return prevUsers;
-            return data.users;
-          });
-        }
-
-        if (data.notifications) {
-          setNotifications(prev => {
-            const limitedNotifs = data.notifications.slice(0, 3);
-            if (JSON.stringify(prev) === JSON.stringify(limitedNotifs)) return prev;
-            return limitedNotifs;
-          });
-        }
-
-        if (data.budget !== undefined && data.budget !== systemBudget && !isProcessingRef.current) {
-          setSystemBudget(data.budget);
-        }
-        if (data.rankProfit !== undefined && data.rankProfit !== rankProfit && !isProcessingRef.current) {
-          setRankProfit(data.rankProfit);
-        }
-        if (data.loanProfit !== undefined && data.loanProfit !== loanProfit && !isProcessingRef.current) {
-          setLoanProfit(data.loanProfit);
-        }
-        if (data.monthlyStats !== undefined && !isProcessingRef.current) {
-          const limitedStats = [...data.monthlyStats].slice(0, 6);
-          setMonthlyStats(limitedStats);
-        }
+        if (data.loans) setLoans(data.loans);
+        if (data.users) setRegisteredUsers(data.users);
+        if (data.notifications) setNotifications(data.notifications.slice(0, 3));
+        if (data.budget !== undefined) setSystemBudget(data.budget);
+        if (data.rankProfit !== undefined) setRankProfit(data.rankProfit);
+        if (data.loanProfit !== undefined) setLoanProfit(data.loanProfit);
+        if (data.monthlyStats !== undefined) setMonthlyStats(data.monthlyStats.slice(0, 6));
         if (data.storageFull !== undefined) setStorageFull(data.storageFull);
         if (data.storageUsage !== undefined) setStorageUsage(data.storageUsage);
 
-        // Update current user if they are in the fetched users list
         if (user && data.users) {
           const freshUser = data.users.find((u: User) => u.id === user.id);
-          if (freshUser && (freshUser.updatedAt || 0) >= (user.updatedAt || 0)) {
-            if (JSON.stringify(freshUser) !== JSON.stringify(user)) {
-              setUser(freshUser);
-            }
-          }
+          if (freshUser) setUser(freshUser);
         }
       } catch (e: any) {
         clearTimeout(timeout);
-        if (e.name === 'AbortError') {
-          console.warn("Yêu cầu tải dữ liệu bị quá hạn (timeout)");
-        } else {
-          console.error("Lỗi khi tải dữ liệu từ server:", e.message || e);
-        }
-        
-        if (retries > 0 && isMounted) {
-          // Retry sooner if it failed
-          timeoutId = setTimeout(() => fetchData(isInitial, retries - 1), 3000);
-          return;
-        }
+        console.error("Lỗi khi tải dữ liệu ban đầu:", e.message || e);
       } finally {
         if (isInitial) setIsInitialized(true);
-        // Schedule next fetch only after current one finishes
-        if (isMounted) {
-          timeoutId = setTimeout(() => fetchData(false), 10000);
-        }
       }
     };
 
     fetchData(true);
-    
+
+    // Socket.io initialization
+    const socket = io(window.location.origin);
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('[REALTIME] Connected to server');
+      if (user) {
+        socket.emit('join', { userId: user.id, isAdmin: user.isAdmin });
+      }
+    });
+
+    socket.on('user_updated', (updatedUser: User) => {
+      console.log('[REALTIME] User updated:', updatedUser.id);
+      setRegisteredUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+      if (user && user.id === updatedUser.id) {
+        setUser(updatedUser);
+      }
+    });
+
+    socket.on('users_updated', (updatedUsers: User[]) => {
+      console.log('[REALTIME] Multiple users updated');
+      setRegisteredUsers(prev => {
+        const newUsers = [...prev];
+        updatedUsers.forEach(u => {
+          const idx = newUsers.findIndex(existing => existing.id === u.id);
+          if (idx !== -1) newUsers[idx] = u;
+          else newUsers.push(u);
+        });
+        return newUsers;
+      });
+      if (user) {
+        const me = updatedUsers.find(u => u.id === user.id);
+        if (me) setUser(me);
+      }
+    });
+
+    socket.on('loan_updated', (updatedLoan: LoanRecord) => {
+      console.log('[REALTIME] Loan updated:', updatedLoan.id);
+      setLoans(prev => {
+        const idx = prev.findIndex(l => l.id === updatedLoan.id);
+        if (idx !== -1) return prev.map(l => l.id === updatedLoan.id ? updatedLoan : l);
+        return [updatedLoan, ...prev];
+      });
+    });
+
+    socket.on('loans_updated', (updatedLoans: LoanRecord[]) => {
+      console.log('[REALTIME] Multiple loans updated');
+      setLoans(prev => {
+        const newLoans = [...prev];
+        updatedLoans.forEach(l => {
+          const idx = newLoans.findIndex(existing => existing.id === l.id);
+          if (idx !== -1) newLoans[idx] = l;
+          else newLoans.push(l);
+        });
+        return newLoans;
+      });
+    });
+
+    socket.on('notification_updated', (notif: Notification) => {
+      console.log('[REALTIME] Notification received');
+      setNotifications(prev => [notif, ...prev].slice(0, 3));
+    });
+
+    socket.on('config_updated', (configs: any[]) => {
+      console.log('[REALTIME] Config updated');
+      configs.forEach(c => {
+        if (c.key === 'budget') setSystemBudget(c.value);
+        if (c.key === 'rankProfit') setRankProfit(c.value);
+        if (c.key === 'loanProfit') setLoanProfit(c.value);
+        if (c.key === 'monthlyStats') setMonthlyStats(c.value.slice(0, 6));
+      });
+    });
+
+    socket.on('sync_completed', (data: any) => {
+      console.log('[REALTIME] Full sync completed');
+      if (data.users) setRegisteredUsers(prev => {
+        const next = [...prev];
+        data.users.forEach((u: any) => {
+          const idx = next.findIndex(e => e.id === u.id);
+          if (idx !== -1) next[idx] = u; else next.push(u);
+        });
+        return next;
+      });
+      if (data.loans) setLoans(prev => {
+        const next = [...prev];
+        data.loans.forEach((l: any) => {
+          const idx = next.findIndex(e => e.id === l.id);
+          if (idx !== -1) next[idx] = l; else next.push(l);
+        });
+        return next;
+      });
+    });
+
     return () => {
       isMounted = false;
-      clearTimeout(timeoutId);
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
     };
   }, []);
+
+  // Re-join room when user changes
+  useEffect(() => {
+    if (socketRef.current && socketRef.current.connected && user) {
+      socketRef.current.emit('join', { userId: user.id, isAdmin: user.isAdmin });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!isInitialized || isGlobalProcessing) return;

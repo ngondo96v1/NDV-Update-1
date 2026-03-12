@@ -5,6 +5,8 @@ import { createServer as createViteServer } from "vite";
 import fs from "fs";
 import path from "path";
 import * as dotenv from "dotenv";
+import { Server } from "socket.io";
+import http from "http";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -13,9 +15,41 @@ import apiRouter from "./api/index";
 
 async function startServer() {
   const app = express();
+  const server = http.createServer(app);
+  const io = new Server(server, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
+
   const PORT = 3000;
 
+  // Make io accessible to routes
+  app.set("io", io);
+
   console.log(`Starting server in ${process.env.NODE_ENV || 'development'} mode`);
+
+  // Socket.io connection handling
+  io.on("connection", (socket) => {
+    console.log(`[SOCKET] New connection: ${socket.id}`);
+
+    socket.on("join", (data) => {
+      const { userId, isAdmin } = data;
+      if (isAdmin) {
+        socket.join("admin");
+        console.log(`[SOCKET] ${socket.id} joined admin room`);
+      }
+      if (userId) {
+        socket.join(`user_${userId}`);
+        console.log(`[SOCKET] ${socket.id} joined room user_${userId}`);
+      }
+    });
+
+    socket.on("disconnect", () => {
+      console.log(`[SOCKET] Disconnected: ${socket.id}`);
+    });
+  });
 
   app.use((req, res, next) => {
     // Skip logging for static assets in development to reduce noise
@@ -65,7 +99,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 

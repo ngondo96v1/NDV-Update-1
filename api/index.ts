@@ -356,6 +356,15 @@ router.post("/users", async (req, res) => {
       });
     }
     
+    // Emit real-time update
+    const io = req.app.get("io");
+    if (io) {
+      incomingUsers.forEach(u => {
+        io.to(`user_${u.id}`).emit("user_updated", u);
+      });
+      io.to("admin").emit("users_updated", incomingUsers);
+    }
+    
     sendSafeJson(res, { success: true });
   } catch (e: any) {
     console.error("Lỗi trong /api/users:", e);
@@ -404,6 +413,15 @@ router.post("/loans", async (req, res) => {
       });
     }
     
+    // Emit real-time update
+    const io = req.app.get("io");
+    if (io) {
+      incomingLoans.forEach(l => {
+        io.to(`user_${l.userId}`).emit("loan_updated", l);
+      });
+      io.to("admin").emit("loans_updated", incomingLoans);
+    }
+    
     sendSafeJson(res, { success: true });
   } catch (e: any) {
     console.error("Lỗi trong /api/loans:", e);
@@ -429,6 +447,15 @@ router.post("/notifications", async (req, res) => {
         code: error.code,
         hint: error.hint || "Hãy đảm bảo bạn đã chạy SQL schema trong Supabase SQL Editor."
       });
+    }
+    
+    // Emit real-time update
+    const io = req.app.get("io");
+    if (io) {
+      incomingNotifs.forEach(n => {
+        io.to(`user_${n.userId}`).emit("notification_updated", n);
+      });
+      io.to("admin").emit("notifications_updated", incomingNotifs);
     }
     
     sendSafeJson(res, { success: true });
@@ -538,6 +565,22 @@ router.post("/sync", async (req, res) => {
     if (configUpdates.length > 0) {
       const { error } = await supabase.from('config').upsert(configUpdates, { onConflict: 'key' });
       if (error) throw error;
+    }
+    
+    // Emit real-time update
+    const io = req.app.get("io");
+    if (io) {
+      if (users) users.forEach((u: any) => io.to(`user_${u.id}`).emit("user_updated", u));
+      if (loans) loans.forEach((l: any) => io.to(`user_${l.userId}`).emit("loan_updated", l));
+      if (notifications) notifications.forEach((n: any) => io.to(`user_${n.userId}`).emit("notification_updated", n));
+      
+      // Always notify admin of sync
+      io.to("admin").emit("sync_completed", { users, loans, notifications, configUpdates });
+      
+      // If config changed, notify everyone or just admin? Usually budget affects everyone
+      if (configUpdates.length > 0) {
+        io.emit("config_updated", configUpdates);
+      }
     }
     
     sendSafeJson(res, { success: true });

@@ -88,8 +88,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   useEffect(() => {
     checkDbStatus();
-    const interval = setInterval(checkDbStatus, 30000); // Check every 30s
-    return () => clearInterval(interval);
   }, []);
 
   const settledLoans = loans.filter(l => l.status === 'ĐÃ TẤT TOÁN');
