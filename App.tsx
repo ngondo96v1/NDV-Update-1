@@ -88,6 +88,7 @@ const App: React.FC = () => {
   const [isGlobalProcessing, setIsGlobalProcessing] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
   const isProcessingRef = React.useRef(false);
+  const lastActionTimestamp = React.useRef<number>(0);
 
   const hasBankInfo = (u: User | null) => {
     if (!u || u.isAdmin) return true;
@@ -188,15 +189,25 @@ const App: React.FC = () => {
         if (!isMounted) return;
         
         // Use functional updates and deep comparison to avoid unnecessary re-renders
-        // CRITICAL: Skip updates if an action is in progress to prevent "state reversion"
-        if (data.loans && !isProcessingRef.current) {
+        // CRITICAL: Skip updates if an action is in progress OR just finished (cooldown)
+        // to prevent "state reversion" from stale server data
+        const isCooldown = Date.now() - lastActionTimestamp.current < 3000;
+        if (isProcessingRef.current || isCooldown) {
+          // Still schedule next fetch
+          if (isMounted) {
+            timeoutId = setTimeout(() => fetchData(false), 10000);
+          }
+          return;
+        }
+
+        if (data.loans) {
           setLoans(prevLoans => {
             if (JSON.stringify(prevLoans) === JSON.stringify(data.loans)) return prevLoans;
             return data.loans;
           });
         }
 
-        if (data.users && !isProcessingRef.current) {
+        if (data.users) {
           setRegisteredUsers(prevUsers => {
             if (JSON.stringify(prevUsers) === JSON.stringify(data.users)) return prevUsers;
             return data.users;
@@ -532,7 +543,8 @@ const App: React.FC = () => {
     }
 
     isProcessingRef.current = true;
-    setIsGlobalProcessing(true);
+    lastActionTimestamp.current = Date.now();
+    // No global processing for 0ms feel
     try {
       const now = new Date();
       
@@ -624,10 +636,12 @@ const App: React.FC = () => {
       
       // Clear processing state early for better responsiveness
       isProcessingRef.current = false;
+      lastActionTimestamp.current = Date.now();
       setIsGlobalProcessing(false);
     } catch (e) {
       console.error("Lỗi lưu khoản vay:", e);
       isProcessingRef.current = false;
+      lastActionTimestamp.current = Date.now();
       setIsGlobalProcessing(false);
     }
   };
@@ -635,7 +649,8 @@ const App: React.FC = () => {
   const handleUpgradeRank = async (targetRank: UserRank, bill: string) => {
     if (!user || isProcessingRef.current) return;
     isProcessingRef.current = true;
-    setIsGlobalProcessing(true);
+    lastActionTimestamp.current = Date.now();
+    // No global processing for 0ms feel
     try {
       const updatedUser = { ...user, pendingUpgradeRank: targetRank, rankUpgradeBill: bill, updatedAt: Date.now() };
       const newRegisteredUsers = registeredUsers.some(u => u.id === user.id)
@@ -654,10 +669,12 @@ const App: React.FC = () => {
       }).catch(err => console.error("Background sync error (upgrade):", err));
       
       isProcessingRef.current = false;
+      lastActionTimestamp.current = Date.now();
       setIsGlobalProcessing(false);
     } catch (e) {
       console.error("Lỗi nâng hạng:", e);
       isProcessingRef.current = false;
+      lastActionTimestamp.current = Date.now();
       setIsGlobalProcessing(false);
     }
   };
@@ -665,7 +682,8 @@ const App: React.FC = () => {
   const handleSettleLoan = async (loanId: string, bill: string, settlementType: 'ALL' | 'PRINCIPAL', bankTransactionId?: string) => {
     if (isProcessingRef.current) return;
     isProcessingRef.current = true;
-    setIsGlobalProcessing(true);
+    lastActionTimestamp.current = Date.now();
+    // No global processing for 0ms feel
     try {
       let updatedLoan: LoanRecord | null = null;
       const newLoans = loans.map(loan => {
@@ -711,6 +729,7 @@ const App: React.FC = () => {
       console.error("Lỗi tất toán:", e);
     } finally {
       isProcessingRef.current = false;
+      lastActionTimestamp.current = Date.now();
       setIsGlobalProcessing(false);
     }
   };
@@ -718,7 +737,8 @@ const App: React.FC = () => {
   const handleAdminLoanAction = async (loanId: string, action: 'APPROVE' | 'DISBURSE' | 'SETTLE' | 'REJECT', reason?: string) => {
     if (isProcessingRef.current) return;
     isProcessingRef.current = true;
-    setIsGlobalProcessing(true);
+    lastActionTimestamp.current = Date.now();
+    setIsGlobalProcessing(true); // Admin actions show loading for 100% certainty
     try {
       let newLoans = [...loans];
       let newRegisteredUsers = [...registeredUsers];
@@ -925,6 +945,7 @@ const App: React.FC = () => {
       console.error("Lỗi lưu thay đổi khoản vay Admin:", e.message || e);
     } finally {
       isProcessingRef.current = false;
+      lastActionTimestamp.current = Date.now();
       setIsGlobalProcessing(false);
     }
   };
@@ -932,7 +953,8 @@ const App: React.FC = () => {
   const handleAdminUserAction = async (userId: string, action: 'APPROVE_RANK' | 'REJECT_RANK') => {
     if (isProcessingRef.current) return;
     isProcessingRef.current = true;
-    setIsGlobalProcessing(true);
+    lastActionTimestamp.current = Date.now();
+    setIsGlobalProcessing(true); // Admin actions show loading
     try {
       let newUsers = [...registeredUsers];
       let updatedUser: User | null = null;
@@ -1033,6 +1055,7 @@ const App: React.FC = () => {
       console.error("Lỗi xử lý nâng hạng Admin:", e.message || e);
     } finally {
       isProcessingRef.current = false;
+      lastActionTimestamp.current = Date.now();
       setIsGlobalProcessing(false);
     }
   };
