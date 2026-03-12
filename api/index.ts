@@ -4,9 +4,11 @@ import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import path from "path";
 
-// Load environment variables with explicit path
-const envPath = path.resolve(process.cwd(), ".env");
-dotenv.config({ path: envPath });
+// Only try to load .env file if we're not in production (Vercel provides env vars directly)
+if (process.env.NODE_ENV !== "production") {
+  const envPath = path.resolve(process.cwd(), ".env");
+  dotenv.config({ path: envPath });
+}
 
 let SUPABASE_URL = process.env.SUPABASE_URL || "";
 let SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "";
