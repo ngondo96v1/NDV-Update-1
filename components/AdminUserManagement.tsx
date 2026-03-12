@@ -76,11 +76,25 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, loans,
     const userLoans = loans.filter(l => l.userId === userId);
     
     let count = 0;
-    // Đếm các khoản vay cần xử lý: Chờ duyệt, Chờ tất toán, và Đã duyệt (chờ giải ngân)
-    count += userLoans.filter(l => l.status === 'CHỜ DUYỆT' || l.status === 'CHỜ TẤT TOÁN' || l.status === 'ĐÃ DUYỆT').length;
+    // Include 'ĐÃ DUYỆT' because it needs 'DISBURSE' (Giải ngân)
+    // Include 'CHỜ TẤT TOÁN' because it needs 'SETTLE' (Xác nhận tất toán)
+    // Include 'CHỜ DUYỆT' because it needs 'APPROVE' (Duyệt vay)
+    count += userLoans.filter(l => 
+      l.status === 'CHỜ DUYỆT' || 
+      l.status === 'ĐÃ DUYỆT' || 
+      l.status === 'CHỜ TẤT TOÁN'
+    ).length;
+    
     if (user?.pendingUpgradeRank) count += 1;
     
     return count;
+  };
+
+  const getLatestActivity = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    const userLoans = loans.filter(l => l.userId === userId);
+    const loanUpdates = userLoans.map(l => l.updatedAt || 0);
+    return Math.max(user?.updatedAt || 0, ...loanUpdates, 0);
   };
 
   const filteredUsers = users.filter(u => {
@@ -92,13 +106,21 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, loans,
     if (filterPendingOnly) return getUserNotificationCount(u.id) > 0;
     return true;
   }).sort((a, b) => {
-    // Ưu tiên User đang được mở rộng (đang xử lý) lên đầu để tránh bị nhảy danh sách
+    // 1. Expanded user always at the very top to prevent jumping while working
     if (a.id === expandedUserId) return -1;
     if (b.id === expandedUserId) return 1;
 
+    // 2. Priority by notification count (including loans needing action)
     const countA = getUserNotificationCount(a.id);
     const countB = getUserNotificationCount(b.id);
     if (countA !== countB) return countB - countA;
+
+    // 3. Priority by latest activity (newest first)
+    const activityA = getLatestActivity(a.id);
+    const activityB = getLatestActivity(b.id);
+    if (activityA !== activityB) return activityB - activityA;
+
+    // 4. Fallback to name
     return a.fullName.localeCompare(b.fullName);
   });
 
