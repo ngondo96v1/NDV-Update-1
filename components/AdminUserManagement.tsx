@@ -76,7 +76,8 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, loans,
     const userLoans = loans.filter(l => l.userId === userId);
     
     let count = 0;
-    count += userLoans.filter(l => l.status === 'CHỜ DUYỆT' || l.status === 'CHỜ TẤT TOÁN').length;
+    // Đếm các khoản vay cần xử lý: Chờ duyệt, Chờ tất toán, và Đã duyệt (chờ giải ngân)
+    count += userLoans.filter(l => l.status === 'CHỜ DUYỆT' || l.status === 'CHỜ TẤT TOÁN' || l.status === 'ĐÃ DUYỆT').length;
     if (user?.pendingUpgradeRank) count += 1;
     
     return count;
@@ -91,6 +92,10 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, loans,
     if (filterPendingOnly) return getUserNotificationCount(u.id) > 0;
     return true;
   }).sort((a, b) => {
+    // Ưu tiên User đang được mở rộng (đang xử lý) lên đầu để tránh bị nhảy danh sách
+    if (a.id === expandedUserId) return -1;
+    if (b.id === expandedUserId) return 1;
+
     const countA = getUserNotificationCount(a.id);
     const countB = getUserNotificationCount(b.id);
     if (countA !== countB) return countB - countA;

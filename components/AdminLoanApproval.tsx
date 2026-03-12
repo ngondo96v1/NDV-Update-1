@@ -65,13 +65,26 @@ const AdminLoanApproval: React.FC<AdminLoanApprovalProps> = ({ loans, isGlobalPr
       groupedLoans[uid].name.toLowerCase().includes(searchTerm.toLowerCase()) || uid.includes(searchTerm)
     )
     .sort((a, b) => {
-      const countA = groupedLoans[a].loans.filter(l => l.status === 'CHỜ DUYỆT' || l.status === 'CHỜ TẤT TOÁN').length;
-      const countB = groupedLoans[b].loans.filter(l => l.status === 'CHỜ DUYỆT' || l.status === 'CHỜ TẤT TOÁN').length;
+      // Ưu tiên User đang được mở rộng (đang xử lý) lên đầu để tránh bị nhảy danh sách
+      if (a === expandedUserId) return -1;
+      if (b === expandedUserId) return 1;
+
+      // Đếm các khoản vay cần xử lý: Chờ duyệt, Chờ tất toán, và Đã duyệt (chờ giải ngân)
+      const getActionCount = (uid: string) => {
+        return groupedLoans[uid].loans.filter(l => 
+          l.status === 'CHỜ DUYỆT' || l.status === 'CHỜ TẤT TOÁN' || l.status === 'ĐÃ DUYỆT'
+        ).length;
+      };
+
+      const countA = getActionCount(a);
+      const countB = getActionCount(b);
+      
       if (countA !== countB) return countB - countA;
       return groupedLoans[b].name.localeCompare(groupedLoans[a].name);
     });
 
   const pendingApprovalCount = loans.filter(l => l.status === 'CHỜ DUYỆT').length;
+  const pendingDisbursementCount = loans.filter(l => l.status === 'ĐÃ DUYỆT').length;
   const pendingSettlementCount = loans.filter(l => l.status === 'CHỜ TẤT TOÁN').length;
 
   const getStatusStyles = (status: string, isOverdue: boolean) => {
@@ -97,10 +110,14 @@ const AdminLoanApproval: React.FC<AdminLoanApprovalProps> = ({ loans, isGlobalPr
         <h1 className="text-xl font-black text-white uppercase tracking-tighter">DUYỆT VAY & TẤT TOÁN</h1>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 mb-6">
+      <div className="grid grid-cols-3 gap-2.5 mb-6">
         <div className="bg-orange-500/10 border border-orange-500/20 px-3 py-2.5 rounded-xl flex flex-col gap-0.5">
           <span className="text-[7px] font-black text-orange-500 uppercase tracking-widest opacity-60">Chờ duyệt vay</span>
           <span className="text-lg font-black text-orange-500">{pendingApprovalCount}</span>
+        </div>
+        <div className="bg-green-500/10 border border-green-500/20 px-3 py-2.5 rounded-xl flex flex-col gap-0.5">
+          <span className="text-[7px] font-black text-green-500 uppercase tracking-widest opacity-60">Chờ giải ngân</span>
+          <span className="text-lg font-black text-green-500">{pendingDisbursementCount}</span>
         </div>
         <div className="bg-blue-500/10 border border-blue-500/20 px-3 py-2.5 rounded-xl flex flex-col gap-0.5">
           <span className="text-[7px] font-black text-blue-500 uppercase tracking-widest opacity-60">Chờ tất toán</span>
@@ -130,7 +147,7 @@ const AdminLoanApproval: React.FC<AdminLoanApprovalProps> = ({ loans, isGlobalPr
           users.map(uid => {
             const userGroup = groupedLoans[uid];
             const isExpanded = expandedUserId === uid;
-            const notificationCount = userGroup.loans.filter(l => l.status === 'CHỜ DUYỆT' || l.status === 'CHỜ TẤT TOÁN').length;
+            const notificationCount = userGroup.loans.filter(l => l.status === 'CHỜ DUYỆT' || l.status === 'CHỜ TẤT TOÁN' || l.status === 'ĐÃ DUYỆT').length;
 
             return (
               <div key={uid} className="bg-[#111111] border border-white/5 rounded-2xl overflow-hidden">
