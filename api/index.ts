@@ -26,7 +26,31 @@ const isValidUrl = (url: string) => {
 const isPlaceholder = (val: string) => 
   !val || val.includes("your-project-id") || val.includes("your-service-role-key") || val === "https://your-project-id.supabase.co";
 
+const app = express();
 let supabase: any = null;
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+
+// Helper to safely stringify data that might contain BigInt
+const safeJsonStringify = (data: any) => {
+  return JSON.stringify(data, (key, value) =>
+    typeof value === 'bigint' ? value.toString() : value
+  );
+};
+
+// Helper to send JSON response safely
+const sendSafeJson = (res: express.Response, data: any, status = 200) => {
+  try {
+    const json = safeJsonStringify(data);
+    res.status(status).set('Content-Type', 'application/json').send(json);
+  } catch (e: any) {
+    console.error("[API ERROR] Failed to serialize JSON:", e);
+    res.status(500).json({
+      error: "Lỗi serialization",
+      message: "Không thể chuyển đổi dữ liệu sang JSON: " + e.message
+    });
+  }
+};
 
 // Safe initialization function
 const initSupabase = () => {
@@ -61,17 +85,17 @@ const initSupabase = () => {
 initSupabase();
 
 const STORAGE_LIMIT_MB = 45; // Virtual limit for demo purposes
-const router = express.Router();
 
 // Debug middleware to log incoming requests
-router.use((req, res, next) => {
-  console.log(`[API DEBUG] ${req.method} ${req.url} (Base: ${req.baseUrl})`);
+app.use((req, res, next) => {
+  console.log(`[API DEBUG] ${req.method} ${req.url}`);
   next();
 });
 
 // Middleware to check Supabase configuration
-router.use((req, res, next) => {
-  if (req.path === '/api-health' || req.path === '/supabase-status') return next();
+app.use((req, res, next) => {
+  // Allow health checks without Supabase
+  if (req.path.includes('/api-health') || req.path.includes('/supabase-status')) return next();
   
   const client = initSupabase();
 
@@ -83,27 +107,6 @@ router.use((req, res, next) => {
   }
   next();
 });
-
-// Helper to safely stringify data that might contain BigInt
-const safeJsonStringify = (data: any) => {
-  return JSON.stringify(data, (key, value) =>
-    typeof value === 'bigint' ? value.toString() : value
-  );
-};
-
-// Helper to send JSON response safely
-const sendSafeJson = (res: express.Response, data: any, status = 200) => {
-  try {
-    const json = safeJsonStringify(data);
-    res.status(status).set('Content-Type', 'application/json').send(json);
-  } catch (e: any) {
-    console.error("[API ERROR] Failed to serialize JSON:", e);
-    res.status(500).json({
-      error: "Lỗi serialization",
-      message: "Không thể chuyển đổi dữ liệu sang JSON: " + e.message
-    });
-  }
-};
 
 // Helper to estimate JSON size in MB
 const getStorageUsage = (data: any) => {
@@ -181,7 +184,7 @@ const autoCleanupStorage = async () => {
 };
 
 // Supabase Status check for Admin
-router.get("/supabase-status", async (req, res) => {
+app.get("/supabase-status", async (req, res) => {
   try {
     if (!supabase) {
       return res.json({ 
@@ -209,7 +212,7 @@ router.get("/supabase-status", async (req, res) => {
 });
 
 // API Routes
-router.get("/data", async (req, res) => {
+app.get("/data", async (req, res) => {
   try {
     const userId = req.query.userId as string;
     const isAdmin = req.query.isAdmin === 'true';
@@ -328,7 +331,7 @@ router.get("/data", async (req, res) => {
   }
 });
 
-router.post("/users", async (req, res) => {
+app.post("/users", async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     const incomingUsers = req.body;
@@ -355,7 +358,7 @@ router.post("/users", async (req, res) => {
   }
 });
 
-router.post("/loans", async (req, res) => {
+app.post("/loans", async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     const incomingLoans = req.body;
@@ -403,7 +406,7 @@ router.post("/loans", async (req, res) => {
   }
 });
 
-router.post("/notifications", async (req, res) => {
+app.post("/notifications", async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     const incomingNotifs = req.body;
@@ -430,7 +433,7 @@ router.post("/notifications", async (req, res) => {
   }
 });
 
-router.post("/budget", async (req, res) => {
+app.post("/budget", async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     const { budget } = req.body;
@@ -443,7 +446,7 @@ router.post("/budget", async (req, res) => {
   }
 });
 
-router.post("/rankProfit", async (req, res) => {
+app.post("/rankProfit", async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     const { rankProfit } = req.body;
@@ -456,7 +459,7 @@ router.post("/rankProfit", async (req, res) => {
   }
 });
 
-router.post("/loanProfit", async (req, res) => {
+app.post("/loanProfit", async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     const { loanProfit } = req.body;
@@ -469,7 +472,7 @@ router.post("/loanProfit", async (req, res) => {
   }
 });
 
-router.post("/monthlyStats", async (req, res) => {
+app.post("/monthlyStats", async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     const { monthlyStats } = req.body;
@@ -482,7 +485,7 @@ router.post("/monthlyStats", async (req, res) => {
   }
 });
 
-router.delete("/users/:id", async (req, res) => {
+app.delete("/users/:id", async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     const userId = req.params.id;
@@ -498,7 +501,7 @@ router.delete("/users/:id", async (req, res) => {
   }
 });
 
-router.post("/sync", async (req, res) => {
+app.post("/sync", async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     const { users, loans, notifications, budget, rankProfit, loanProfit, monthlyStats } = req.body;
@@ -548,7 +551,7 @@ router.post("/sync", async (req, res) => {
   }
 });
 
-router.post("/reset", async (req, res) => {
+app.post("/reset", async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     
@@ -570,7 +573,7 @@ router.post("/reset", async (req, res) => {
   }
 });
 
-router.post("/import", async (req, res) => {
+app.post("/import", async (req, res) => {
   try {
     if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
     const { users, loans, notifications, budget, rankProfit, loanProfit, monthlyStats } = req.body;
@@ -629,7 +632,7 @@ router.post("/import", async (req, res) => {
 });
 
 // Specific health check for Vercel deployment verification
-router.get("/api-health", (req, res) => {
+app.get("/api-health", (req, res) => {
   res.json({ 
     status: "ok", 
     environment: process.env.NODE_ENV || 'production', 
@@ -641,7 +644,7 @@ router.get("/api-health", (req, res) => {
 });
 
 // Export the router for Vercel
-router.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error("[API ROUTER ERROR]:", err);
   const status = err.status || err.statusCode || 500;
   sendSafeJson(res, {
@@ -651,4 +654,4 @@ router.use((err: any, req: express.Request, res: express.Response, next: express
   }, status);
 });
 
-export default router;
+export default app;
