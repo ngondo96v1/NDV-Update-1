@@ -26,29 +26,7 @@ const isValidUrl = (url: string) => {
 const isPlaceholder = (val: string) => 
   !val || val.includes("your-project-id") || val.includes("your-service-role-key") || val === "https://your-project-id.supabase.co";
 
-let supabase = (() => {
-  try {
-    if (SUPABASE_URL && SUPABASE_KEY && isValidUrl(SUPABASE_URL) && !isPlaceholder(SUPABASE_URL) && !isPlaceholder(SUPABASE_KEY)) {
-      console.log("Initializing Supabase client with URL:", SUPABASE_URL);
-      return createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-    console.warn("Supabase credentials missing, invalid, or using placeholders.");
-    return null;
-  } catch (e) {
-    console.error("Failed to initialize Supabase client:", e);
-    return null;
-  }
-})();
-
-const STORAGE_LIMIT_MB = 45; // Virtual limit for demo purposes
-
-const router = express.Router();
-
-// Debug middleware to log incoming requests
-router.use((req, res, next) => {
-  console.log(`[API DEBUG] ${req.method} ${req.url} (Base: ${req.baseUrl})`);
-  next();
-});
+let supabase: any = null;
 
 // Safe initialization function
 const initSupabase = () => {
@@ -57,24 +35,39 @@ const initSupabase = () => {
   const url = process.env.SUPABASE_URL || "";
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "";
 
+  console.log(`[API] Attempting to initialize Supabase. URL present: ${!!url}, Key present: ${!!key}`);
+
   if (url && key && isValidUrl(url) && !isPlaceholder(url) && !isPlaceholder(key)) {
     try {
       supabase = createClient(url, key, {
         auth: {
-          persistSession: false // Critical for serverless environments
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false
         }
       });
+      console.log("[API] Supabase client initialized successfully.");
       return supabase;
     } catch (e) {
       console.error("[API] Supabase init error:", e);
       return null;
     }
   }
+  console.warn("[API] Supabase credentials missing or invalid.");
   return null;
 };
 
 // Initialize once at module level
 initSupabase();
+
+const STORAGE_LIMIT_MB = 45; // Virtual limit for demo purposes
+const router = express.Router();
+
+// Debug middleware to log incoming requests
+router.use((req, res, next) => {
+  console.log(`[API DEBUG] ${req.method} ${req.url} (Base: ${req.baseUrl})`);
+  next();
+});
 
 // Middleware to check Supabase configuration
 router.use((req, res, next) => {
