@@ -275,6 +275,25 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
     setTimeout(() => setCopyToast(false), 2000);
   };
 
+  const handleDownloadQR = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `QR_Thanh_Toan_${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Error downloading QR:', error);
+      // Fallback: open in new tab if fetch fails (e.g. CORS)
+      window.open(url, '_blank');
+    }
+  };
+
   const handleBillUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -803,7 +822,7 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
                 </div>
 
                 {/* Quick Copy Bar */}
-                <div className="w-full grid grid-cols-3 gap-2 mt-2">
+                <div className="w-full grid grid-cols-4 gap-2 mt-2">
                   <button 
                     onClick={() => copyToClipboard('0877203996')}
                     className="flex flex-col items-center gap-1.5 p-3 bg-gray-50 rounded-2xl border border-gray-100 active:bg-gray-100 transition-all"
@@ -824,6 +843,13 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
                   >
                     <FileText size={14} className="text-[#ff8c00]" />
                     <span className="text-[7px] font-black text-gray-500 uppercase">Copy ND</span>
+                  </button>
+                  <button 
+                    onClick={() => handleDownloadQR(qrUrl)}
+                    className="flex flex-col items-center gap-1.5 p-3 bg-[#ff8c00]/10 rounded-2xl border border-[#ff8c00]/20 active:bg-[#ff8c00]/20 transition-all"
+                  >
+                    <ArrowDownToLine size={14} className="text-[#ff8c00]" />
+                    <span className="text-[7px] font-black text-[#ff8c00] uppercase">Tải QR</span>
                   </button>
                 </div>
 
