@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS loans (
   "settlementType" TEXT,
   signature TEXT,
   "rejectionReason" TEXT,
+  "principalPaymentCount" INTEGER DEFAULT 0,
   "updatedAt" BIGINT
 );
 

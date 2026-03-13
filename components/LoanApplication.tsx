@@ -180,6 +180,12 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
   const [bankTransactionId, setBankTransactionId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (settleLoan && (settleLoan.principalPaymentCount || 0) >= 2 && settleType === 'PRINCIPAL') {
+      setSettleType('ALL');
+    }
+  }, [settleLoan, settleType]);
+
   const isDuplicateTransaction = bankTransactionId.trim() !== '' && loans.some(l => 
     l.bankTransactionId === bankTransactionId.trim() && l.id !== settleLoan?.id
   );
@@ -393,32 +399,32 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
                 <Info size={14} className="text-[#ff8c00]" />
                 <span className="text-[9px] font-black text-[#ff8c00] uppercase tracking-widest">Chính sách vay vốn</span>
              </div>
-             <div className="space-y-2.5">
+              <div className="space-y-2.5">
                 <div className="flex gap-2.5">
                   <div className="w-4 h-4 bg-[#ff8c00] rounded-full flex items-center justify-center shrink-0 font-black text-[9px] text-black">1</div>
                   <p className="text-[9px] font-bold text-gray-300 leading-tight">
-                    <span className="text-[#ff8c00]">Phí dịch vụ:</span> 15% khấu trừ trực tiếp vào số tiền giải ngân.
+                    <span className="text-[#ff8c00]">Phí dịch vụ:</span> 15% khấu trừ trực tiếp vào số tiền nhận.
                   </p>
                 </div>
                 <div className="flex gap-2.5">
                   <div className="w-4 h-4 bg-[#ff8c00] rounded-full flex items-center justify-center shrink-0 font-black text-[9px] text-black">2</div>
                   <p className="text-[9px] font-bold text-gray-300 leading-tight">
-                    <span className="text-[#ff8c00]">Hạn mức:</span> Tối đa 10.000.000 đ trong chu kỳ 30 ngày.
+                    <span className="text-[#ff8c00]">Hạn mức:</span> Tối đa 10 triệu VNĐ trong chu kỳ 30 ngày.
                   </p>
                 </div>
                 <div className="flex gap-2.5">
                   <div className="w-4 h-4 bg-[#ff8c00] rounded-full flex items-center justify-center shrink-0 font-black text-[9px] text-black">3</div>
                   <p className="text-[9px] font-bold text-gray-300 leading-tight">
-                    <span className="text-[#ff8c00]">Vay bổ sung:</span> Có thể vay nhiều lần nếu chưa vượt hạn mức chu kỳ.
+                    <span className="text-[#ff8c00]">Vay bổ sung:</span> Được vay nhiều lần nếu còn hạn mức khả dụng.
                   </p>
                 </div>
                 <div className="flex gap-2.5">
                   <div className="w-4 h-4 bg-[#ff8c00] rounded-full flex items-center justify-center shrink-0 font-black text-[9px] text-black">4</div>
                   <p className="text-[9px] font-bold text-gray-300 leading-tight">
-                    <span className="text-[#ff8c00]">Quy tắc:</span> Chỉ xử lý 01 yêu cầu vay vốn tại một thời điểm.
+                    <span className="text-[#ff8c00]">Xét duyệt:</span> Chỉ xử lý 01 yêu cầu vay tại một thời điểm.
                   </p>
                 </div>
-             </div>
+              </div>
           </div>
         )}
 
@@ -666,6 +672,11 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
     const amountAll = Math.round(settleLoan.amount + (settleLoan.fine || 0));
     const amountPrincipal = Math.round((settleLoan.amount * 0.15) + (settleLoan.fine || 0));
     
+    // Logic giới hạn vay gốc 2 lần
+    const principalCount = settleLoan.principalPaymentCount || 0;
+    const canSettlePrincipal = principalCount < 2;
+    const isSecondPrincipal = principalCount === 1;
+
     const currentAmount = settleType === 'ALL' ? amountAll : amountPrincipal;
     const currentPrefix = settleType === 'ALL' ? 'TT' : 'VG';
     const content = `${currentPrefix}-${settleLoan.id}`;
@@ -693,7 +704,7 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
         </div>
 
         {/* Settlement Type Selection */}
-        <div className="flex gap-2 mb-4 flex-none">
+        <div className="flex gap-2 mb-2 flex-none">
           <button 
             onClick={() => setSettleType('ALL')}
             className={`flex-1 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all border ${
@@ -705,16 +716,36 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
             Tất Cả
           </button>
           <button 
+            disabled={!canSettlePrincipal}
             onClick={() => setSettleType('PRINCIPAL')}
             className={`flex-1 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all border ${
               settleType === 'PRINCIPAL' 
                 ? 'bg-[#ff8c00] text-black border-[#ff8c00] shadow-lg shadow-orange-500/20' 
-                : 'bg-white/5 text-gray-500 border-white/5'
+                : !canSettlePrincipal
+                  ? 'bg-gray-800 text-gray-700 border-white/5 cursor-not-allowed'
+                  : 'bg-white/5 text-gray-500 border-white/5'
             }`}
           >
-            Vay Gốc
+            Vay Gốc {principalCount > 0 && `(${principalCount}/2)`}
           </button>
         </div>
+
+        {isSecondPrincipal && settleType === 'PRINCIPAL' && (
+          <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 flex items-center justify-center animate-in slide-in-from-top-2 duration-300">
+            <p className="text-[8px] font-black text-orange-200 uppercase tracking-wider text-center">
+              Lưu ý: Đây là lần gia hạn cuối cùng, vui lòng tất toán gốc ở kỳ hạn sau.
+            </p>
+          </div>
+        )}
+
+        {!canSettlePrincipal && (
+          <div className="mb-4 bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-center justify-center animate-in slide-in-from-top-2 duration-300">
+            <p className="text-[8px] font-black text-red-200 uppercase tracking-wider text-center">
+              Đã hết lượt gia hạn (Vay Gốc) cho khoản vay này.
+            </p>
+          </div>
+        )}
+        
 
         <div className="flex-1 min-h-0 overflow-hidden">
           {showHelp ? (
@@ -725,10 +756,10 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
                </div>
                <div className="space-y-2">
                   {[
-                    "Chọn hình thức: Tất cả (Gốc + Phí) hoặc Vay Gốc (Chỉ Phí).",
-                    "Chuyển khoản chính xác Số tiền và Nội dung hiển thị trên mã QR.",
-                    "Nhập Mã giao dịch (FT...) để hệ thống xác thực tự động.",
-                    "Tải ảnh Biên lai (Bill) rõ nét để hoàn tất thủ tục."
+                    "Chọn Tất cả (Gốc + Phí) hoặc Vay Gốc (Chỉ đóng phí gia hạn).",
+                    "Chuyển khoản đúng Số tiền và Nội dung theo mã QR hiển thị.",
+                    "Nhập chính xác Mã giao dịch (FT...) để hệ thống tự động đối soát.",
+                    "Tải ảnh Biên lai rõ nét để Admin xác nhận hoàn tất thủ tục."
                   ].map((text, idx) => (
                     <div key={idx} className="flex gap-2">
                       <div className="w-3.5 h-3.5 bg-[#ff8c00] rounded-full flex items-center justify-center shrink-0 font-black text-[8px] text-black">{idx + 1}</div>

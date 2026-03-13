@@ -185,10 +185,10 @@ const RankLimits: React.FC<RankLimitsProps> = ({ user, isGlobalProcessing, onBac
                </div>
                <div className="space-y-2.5">
                   {[
-                    "Quét mã QR hoặc sao chép thông tin thanh toán phí nâng hạng.",
-                    "Thực hiện chuyển khoản 24/7 qua ứng dụng Ngân hàng.",
-                    "Lưu ảnh Biên lai giao dịch thành công để làm bằng chứng.",
-                    "Tải ảnh Bill lên hệ thống và gửi yêu cầu chờ Admin phê duyệt."
+                    "Quét mã QR hoặc sao chép thông tin tài khoản thụ hưởng phí.",
+                    "Thực hiện chuyển khoản 24/7 qua ứng dụng Ngân hàng của bạn.",
+                    "Lưu lại ảnh Biên lai (Bill) giao dịch thành công làm bằng chứng.",
+                    "Tải ảnh Bill lên hệ thống và gửi yêu cầu để Admin phê duyệt hạng."
                   ].map((text, idx) => (
                     <div key={idx} className="flex gap-2.5">
                       <div className="w-4 h-4 bg-[#ff8c00] rounded-full flex items-center justify-center shrink-0 font-black text-[9px] text-black">{idx + 1}</div>
@@ -341,11 +341,11 @@ const RankLimits: React.FC<RankLimitsProps> = ({ user, isGlobalProcessing, onBac
            <div className="grid grid-cols-1 gap-1.5">
               <div className="flex gap-2">
                 <div className="w-3.5 h-3.5 bg-[#ff8c00] rounded-full flex items-center justify-center shrink-0 font-black text-[8px] text-black">1</div>
-                <p className="text-[8px] font-bold text-gray-300 leading-tight">Tăng hạn mức vay, ưu tiên duyệt lệnh và giảm phí phạt.</p>
+                <p className="text-[8px] font-bold text-gray-300 leading-tight">Nâng hạng giúp tăng hạn mức vay, ưu tiên duyệt và giảm phí phạt.</p>
               </div>
               <div className="flex gap-2">
                 <div className="w-3.5 h-3.5 bg-[#ff8c00] rounded-full flex items-center justify-center shrink-0 font-black text-[8px] text-black">2</div>
-                <p className="text-[8px] font-bold text-gray-300 leading-tight">Phí nâng hạng: 5% giá trị hạn mức tối đa của hạng mới.</p>
+                <p className="text-[8px] font-bold text-gray-300 leading-tight">Phí nâng hạng cố định: 5% giá trị hạn mức tối đa của hạng mới.</p>
               </div>
            </div>
         </div>

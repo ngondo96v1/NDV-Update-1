@@ -71,6 +71,7 @@ export interface LoanRecord {
   signature?: string; // Lưu trữ DataURL của chữ ký
   rejectionReason?: string;
   settlementType?: 'ALL' | 'PRINCIPAL';
+  principalPaymentCount?: number;
   updatedAt?: number;
 }
 

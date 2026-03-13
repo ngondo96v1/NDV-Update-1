@@ -12,12 +12,31 @@ const AdminSystem: React.FC<AdminSystemProps> = ({ onReset, onImportSuccess, onB
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
   const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleResetExecute = () => {
     onReset();
     setShowResetConfirm(false);
+  };
+
+  const handleMigrate = async () => {
+    setIsMigrating(true);
+    setImportMessage(null);
+    try {
+      const response = await fetch('/api/migrate', { method: 'POST' });
+      const result = await response.json();
+      if (response.ok) {
+        setImportMessage({ type: 'success', text: result.message });
+      } else {
+        setImportMessage({ type: 'error', text: result.message });
+      }
+    } catch (e) {
+      setImportMessage({ type: 'error', text: 'Lỗi kết nối khi kiểm tra cấu trúc' });
+    } finally {
+      setIsMigrating(false);
+    }
   };
 
   const handleExport = async () => {
@@ -196,10 +215,19 @@ const AdminSystem: React.FC<AdminSystemProps> = ({ onReset, onImportSuccess, onB
           <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Cấu hình quy định</h4>
         </div>
 
-        <div className="p-3">
+        <div className="p-3 space-y-4">
           <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest leading-relaxed italic text-center">
             Tính năng cấu hình lãi suất, ngày trả cố định, API Zalo... đang được phát triển trong phiên bản tiếp theo.
           </p>
+          
+          <button 
+            onClick={handleMigrate}
+            disabled={isMigrating}
+            className="w-full bg-blue-600/10 border border-blue-500/20 text-blue-500 font-black py-3 rounded-xl text-[8px] uppercase tracking-widest hover:bg-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            {isMigrating ? <Loader2 className="animate-spin" size={14} /> : <Database size={14} />}
+            Kiểm tra & Cập nhật cấu trúc DB
+          </button>
         </div>
       </div>
 

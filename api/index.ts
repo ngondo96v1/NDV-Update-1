@@ -29,10 +29,13 @@ const isPlaceholder = (val: string) =>
 const app = express();
 const router = express.Router();
 let supabase: any = null;
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // Mount router at both root and /api to handle both local and Vercel environments
+// When used as a sub-app in server.ts, it will be mounted at /api, 
+// so requests to /api/data will reach here as /data.
 app.use("/api", router);
 app.use("/", router);
 
@@ -294,9 +297,9 @@ router.get("/data", async (req, res) => {
       fetchConfig()
     ]);
 
-    const budget = Number(config?.find(c => c.key === 'budget')?.value ?? 30000000);
-    const rankProfit = Number(config?.find(c => c.key === 'rankProfit')?.value ?? 0);
-    const loanProfit = Number(config?.find(c => c.key === 'loanProfit')?.value ?? 0);
+    const budget = Number(config?.find(c => c.key === 'budget')?.value) || 30000000;
+    const rankProfit = Number(config?.find(c => c.key === 'rankProfit')?.value) || 0;
+    const loanProfit = Number(config?.find(c => c.key === 'loanProfit')?.value) || 0;
     const monthlyStats = config?.find(c => c.key === 'monthlyStats')?.value || [];
 
     const payload = {
@@ -308,6 +311,8 @@ router.get("/data", async (req, res) => {
       loanProfit,
       monthlyStats
     };
+
+    console.log(`[API] Data fetch successful. Users: ${users.length}, Loans: ${loans.length}`);
 
     // Only calculate storage usage if explicitly requested
     let usage = 0;
@@ -547,8 +552,38 @@ router.post("/sync", async (req, res) => {
     }
     
     if (loans && Array.isArray(loans) && loans.length > 0) {
-      const { error } = await supabase.from('loans').upsert(loans, { onConflict: 'id' });
-      if (error) throw error;
+      // Filter out fields that might not exist in older schemas to prevent 500 errors
+      // until the user updates their Supabase schema
+      const validLoanKeys = [
+        'id', 'userId', 'userName', 'amount', 'date', 'createdAt', 'status', 
+        'fine', 'billImage', 'bankTransactionId', 'settlementType', 'signature', 
+        'rejectionReason', 'updatedAt', 'principalPaymentCount'
+      ];
+      
+      const filteredLoans = loans.map((loan: any) => {
+        const filtered: any = {};
+        validLoanKeys.forEach(key => {
+          if (loan[key] !== undefined) filtered[key] = loan[key];
+        });
+        return filtered;
+      });
+
+      const { error } = await supabase.from('loans').upsert(filteredLoans, { onConflict: 'id' });
+      if (error) {
+        console.error("[API ERROR] Loans upsert failed:", error);
+        // If it's a missing column error, try again without the new column
+        if (error.code === '42703' || (error.message && error.message.includes('column "principalPaymentCount" does not exist'))) {
+          console.warn("[API] Retrying loans upsert without principalPaymentCount...");
+          const saferLoans = filteredLoans.map((l: any) => {
+            const { principalPaymentCount, ...rest } = l;
+            return rest;
+          });
+          const { error: retryError } = await supabase.from('loans').upsert(saferLoans, { onConflict: 'id' });
+          if (retryError) throw retryError;
+        } else {
+          throw error;
+        }
+      }
     }
     
     if (notifications && Array.isArray(notifications) && notifications.length > 0) {
@@ -612,6 +647,36 @@ router.post("/reset", async (req, res) => {
     sendSafeJson(res, { success: true });
   } catch (e: any) {
     console.error("Lỗi trong /api/reset:", e);
+    res.status(500).json({ error: "Internal Server Error", message: e.message });
+  }
+});
+
+router.post("/migrate", async (req, res) => {
+  try {
+    if (!supabase) return res.status(503).json({ error: "Supabase not configured" });
+    
+    console.log("[Migration] Attempting to add principalPaymentCount column...");
+    
+    // We use a raw SQL query via Supabase RPC if available, or we just try to insert a dummy record with the column
+    // Since we can't easily run ALTER TABLE via the standard JS client without a custom RPC function,
+    // we inform the user or try a workaround.
+    
+    // Most AI Studio apps have a 'exec_sql' or similar RPC if set up correctly, 
+    // but here we'll just return instructions or try to detect if it exists.
+    
+    const { error } = await supabase.from('loans').select('principalPaymentCount').limit(1);
+    
+    if (error && (error.code === '42703' || error.message.includes('column "principalPaymentCount" does not exist'))) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing Column",
+        message: "Cột 'principalPaymentCount' chưa tồn tại trong bảng 'loans'. Vui lòng truy cập Supabase SQL Editor và chạy lệnh: ALTER TABLE loans ADD COLUMN \"principalPaymentCount\" INTEGER DEFAULT 0;"
+      });
+    }
+    
+    res.json({ success: true, message: "Cấu trúc cơ sở dữ liệu đã chính xác." });
+  } catch (e: any) {
+    console.error("Lỗi trong /api/migrate:", e);
     res.status(500).json({ error: "Internal Server Error", message: e.message });
   }
 });
@@ -686,15 +751,6 @@ router.get("/api-health", (req, res) => {
   });
 });
 
-// Export the router for Vercel
-router.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error("[API ROUTER ERROR]:", err);
-  const status = err.status || err.statusCode || 500;
-  sendSafeJson(res, {
-    error: "API Error",
-    message: err.message || "Đã xảy ra lỗi trong quá trình xử lý API",
-    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
-  }, status);
-});
-
+// Export the router
+export { router as apiRouter };
 export default app;

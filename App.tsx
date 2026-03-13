@@ -136,7 +136,10 @@ const App: React.FC = () => {
       if (!isMounted) return;
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      const timeout = setTimeout(() => {
+        console.warn("[FETCH] Request timed out after 30s");
+        controller.abort();
+      }, 30000); // Increased to 30s
 
       try {
         const params = new URLSearchParams();
@@ -149,6 +152,7 @@ const App: React.FC = () => {
         params.append('t', Date.now().toString());
         const url = `/api/data?${params.toString()}`;
         
+        console.log(`[FETCH] Loading data from ${url}`);
         const response = await fetch(url, { signal: controller.signal });
         clearTimeout(timeout);
 
@@ -156,6 +160,7 @@ const App: React.FC = () => {
           let errorMessage = `Lỗi Server ${response.status}${response.statusText ? ': ' + response.statusText : ''}`;
           try {
             const text = await response.text();
+            console.error(`[FETCH] Error response body:`, text);
             try {
               const errorData = JSON.parse(text);
               if (errorData.message) errorMessage = errorData.message;
@@ -176,12 +181,18 @@ const App: React.FC = () => {
         
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
+          const text = await response.text();
+          console.error(`[FETCH] Non-JSON response:`, text.substring(0, 200));
           throw new Error(`Server không trả về JSON (Status: ${response.status})`);
         }
 
         const data = await response.json();
         if (!isMounted) return;
         
+        console.log(`[FETCH] Data loaded successfully:`, { 
+          users: data.users?.length, 
+          loans: data.loans?.length 
+        });
         if (data.loans) setLoans(data.loans);
         if (data.users) setRegisteredUsers(data.users);
         if (data.notifications) setNotifications(data.notifications.slice(0, 3));
@@ -880,6 +891,10 @@ const App: React.FC = () => {
         status: (action === 'SETTLE' && loan.settlementType === 'PRINCIPAL') ? 'ĐANG NỢ' : (newStatus as any), 
         date: newDueDate,
         rejectionReason, 
+        // Tăng số lần vay gốc nếu là Tất toán Gốc thành công
+        principalPaymentCount: (action === 'SETTLE' && loan.settlementType === 'PRINCIPAL') 
+          ? (loan.principalPaymentCount || 0) + 1 
+          : loan.principalPaymentCount,
         // Clear bill and type if it's a successful Principal Settlement to keep the next cycle clean
         billImage: (action === 'SETTLE' && loan.settlementType === 'PRINCIPAL') ? null : loan.billImage,
         settlementType: (action === 'SETTLE' && loan.settlementType === 'PRINCIPAL') ? null : loan.settlementType,
