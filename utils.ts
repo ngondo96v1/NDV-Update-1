@@ -53,12 +53,17 @@ export const calculateFine = (amount: number, dueDateStr: string): number => {
 
 /**
  * Sinh mã hợp đồng duy nhất
- * Định dạng: NDV-[YYYYMMDD]-[4 ký tự cuối UID]-[4 số ngẫu nhiên]
+ * Định dạng: [ddmmyy]-[4 ký tự cuối UID]-[4 số ngẫu nhiên]
+ * Ví dụ: 010326-ABCD-5678
  */
 export const generateContractId = (userId: string): string => {
   const now = new Date();
-  const datePart = now.toISOString().split('T')[0].replace(/-/g, '');
+  const d = String(now.getDate()).padStart(2, '0');
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const y = String(now.getFullYear()).slice(-2);
+  const datePart = `${d}${m}${y}`;
+  
   const userPart = userId.slice(-4).toUpperCase();
   const randomPart = Math.floor(1000 + Math.random() * 9000);
-  return `NDV-${datePart}-${userPart}-${randomPart}`;
+  return `${datePart}-${userPart}-${randomPart}`;
 };

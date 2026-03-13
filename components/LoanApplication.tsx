@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { User, LoanRecord } from '../types';
 import { Wallet, X, Eye, FileText, CheckCircle2, ShieldCheck, Eraser, ChevronLeft, CreditCard, Copy, Camera, UploadCloud, CircleHelp, Info, Award, Landmark, FileCheck, AlertCircle, AlertTriangle, ArrowDownToLine, ShieldAlert, ChevronRight, History, Calendar } from 'lucide-react';
 import ContractModal from './ContractModal';
-import { compressImage } from '../utils';
+import { compressImage, generateContractId } from '../utils';
 
 interface LoanApplicationProps {
   user: User | null;
@@ -214,7 +214,10 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
   const isSystemOutOfCapital = systemBudget < 1000000;
 
   const nextSequence = (user?.lastLoanSeq || 0) + 1;
-  const nextContractId = user ? `${user.id}-${nextSequence}` : 'TEMP-ID';
+  const nextContractId = useMemo(() => {
+    if (!user) return 'TEMP-ID';
+    return generateContractId(user.id);
+  }, [user?.id, step === LoanStep.CONTRACT]);
 
   const getCalculatedDueDate = () => {
     const now = new Date();
