@@ -735,7 +735,7 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
                 : 'bg-white/5 text-gray-500 border-white/5'
             }`}
           >
-            Tất Cả
+            Tất Toán
           </button>
           <button 
             disabled={!canSettlePrincipal}
@@ -748,14 +748,14 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
                   : 'bg-white/5 text-gray-500 border-white/5'
             }`}
           >
-            Vay Gốc {principalCount > 0 && `(${principalCount}/2)`}
+            Gia hạn {principalCount > 0 && `(${principalCount}/2)`}
           </button>
         </div>
 
         {isSecondPrincipal && settleType === 'PRINCIPAL' && (
-          <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 flex items-center justify-center animate-in slide-in-from-top-2 duration-300">
-            <p className="text-[8px] font-black text-orange-200 uppercase tracking-wider text-center">
-              Lưu ý: Đây là lần gia hạn cuối cùng, vui lòng tất toán gốc ở kỳ hạn sau.
+          <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl py-2 px-1 flex items-center justify-center animate-in slide-in-from-top-2 duration-300">
+            <p className="text-[7px] font-black text-orange-200 uppercase tracking-tighter text-center whitespace-nowrap">
+              Lần gia hạn cuối, vui lòng tất toán ở kỳ sau.
             </p>
           </div>
         )}
@@ -763,7 +763,7 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
         {!canSettlePrincipal && (
           <div className="mb-4 bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-center justify-center animate-in slide-in-from-top-2 duration-300">
             <p className="text-[8px] font-black text-red-200 uppercase tracking-wider text-center">
-              Đã hết lượt gia hạn (Vay Gốc) cho khoản vay này.
+              Đã hết lượt gia hạn cho khoản vay này.
             </p>
           </div>
         )}
@@ -778,7 +778,7 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
                </div>
                <div className="space-y-2">
                   {[
-                    "Chọn Tất cả (Gốc + Phí) hoặc Vay Gốc (Chỉ đóng phí gia hạn).",
+                    "Chọn Tất Toán hoặc Gia hạn để tiếp tục.",
                     "Chuyển khoản đúng Số tiền và Nội dung theo mã QR hiển thị.",
                     "Nhập chính xác Mã giao dịch (FT...) để hệ thống tự động đối soát.",
                     "Tải ảnh Biên lai rõ nét để Admin xác nhận hoàn tất thủ tục."

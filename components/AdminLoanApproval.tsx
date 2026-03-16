@@ -213,7 +213,7 @@ const AdminLoanApproval: React.FC<AdminLoanApprovalProps> = ({ loans, isGlobalPr
                                 </div>
                                 {loan.settlementType && (
                                   <span className={`text-[7px] font-black px-1.5 py-0.5 rounded uppercase ${loan.settlementType === 'ALL' ? 'bg-green-500/20 text-green-500' : 'bg-blue-500/20 text-blue-500'}`}>
-                                    {loan.settlementType === 'ALL' ? 'Tất Cả' : 'Vay Gốc'}
+                                    {loan.settlementType === 'ALL' ? 'Tất Toán' : 'Gia hạn'}
                                   </span>
                                 )}
                               </div>

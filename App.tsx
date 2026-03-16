@@ -985,7 +985,7 @@ const App: React.FC = () => {
         addNotification(loan.userId, 'Giải ngân thành công', `Khoản vay ID ${loan.id} đã được giải ngân vào tài khoản của bạn.`, 'LOAN');
       } else if (action === 'SETTLE') {
         if (loan.settlementType === 'PRINCIPAL') {
-          addNotification(loan.userId, 'Gia hạn thành công', `Khoản vay ID ${loan.id} đã được gia hạn (Vay Gốc) thành công. Hạn trả mới: ${newDueDate}.`, 'LOAN');
+          addNotification(loan.userId, 'Gia hạn thành công', `Khoản vay ID ${loan.id} đã được gia hạn thành công. Hạn trả mới: ${newDueDate}.`, 'LOAN');
         } else {
           addNotification(loan.userId, 'Tất toán thành công', `Khoản vay ID ${loan.id} đã được tất toán toàn bộ gốc và lãi thành công.`, 'LOAN');
         }
@@ -997,7 +997,7 @@ const App: React.FC = () => {
         if (isSettlementReject) {
           if (loan.settlementType === 'PRINCIPAL') {
             title = 'Từ chối gia hạn';
-            typeStr = 'gia hạn (Vay Gốc) cho ';
+            typeStr = 'gia hạn cho ';
           } else {
             title = 'Từ chối tất toán';
             typeStr = 'tất toán toàn bộ cho ';
