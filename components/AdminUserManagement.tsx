@@ -660,7 +660,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, loans,
                                             </button>
                                           </div>
                                           <div className="flex flex-col items-center">
-                                            <p className="text-[6px] font-bold text-gray-500 uppercase">Thực nhận: {Math.round(loan.amount * 0.85).toLocaleString()} đ</p>
+                                            <p className="text-[6px] font-bold text-gray-500 uppercase">Số tiền giải ngân: {Math.round(loan.amount * 0.85).toLocaleString()} đ</p>
                                             <p className="text-[5px] font-black text-blue-400 uppercase tracking-tighter mt-0.5">Nội dung: CKNDV-{loan.id}</p>
                                           </div>
                                         </div>
@@ -784,7 +784,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, loans,
                                     <div className="flex flex-col items-center justify-center gap-1 py-2.5 bg-white/[0.03] border border-white/5 rounded-xl">
                                       <div className="flex items-center gap-1.5">
                                         <ArrowDownToLine size={10} className="text-[#ff8c00]" />
-                                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Số tiền Thực Giải ngân:</span>
+                                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Số tiền Giải ngân:</span>
                                       </div>
                                       <p className="text-xs font-black text-white tracking-tight">
                                         {(loan.amount * 0.85).toLocaleString()} VNĐ

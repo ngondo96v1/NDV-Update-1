@@ -194,7 +194,7 @@ const AdminLoanApproval: React.FC<AdminLoanApprovalProps> = ({ loans, isGlobalPr
                               <h4 className="text-base font-black text-white">{loan.amount.toLocaleString()} đ</h4>
                               {loan.status === 'ĐÃ DUYỆT' && (
                                 <div className="mt-1 flex items-center gap-1.5">
-                                  <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Thực nhận (85%):</span>
+                                  <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Số tiền giải ngân:</span>
                                   <span className="text-[10px] font-black text-green-500">{(loan.amount * 0.85).toLocaleString()} đ</span>
                                 </div>
                               )}
@@ -293,7 +293,7 @@ const AdminLoanApproval: React.FC<AdminLoanApprovalProps> = ({ loans, isGlobalPr
                               <div className="flex flex-col gap-2">
                                 <div className="bg-green-500/5 border border-green-500/10 rounded-xl p-2.5">
                                   <p className="text-[7px] font-bold text-gray-400 uppercase leading-relaxed">
-                                    <span className="text-green-500">Lưu ý:</span> Hệ thống sẽ trừ <span className="text-white">85%</span> giá trị khoản vay vào ngân sách. Admin vui lòng chuyển khoản thủ công số tiền <span className="text-white font-black">{(loan.amount * 0.85).toLocaleString()} đ</span> cho khách hàng.
+                                    <span className="text-green-500">Lưu ý:</span> Hệ thống sẽ tự động khấu trừ các khoản phí theo quy định. Admin vui lòng chuyển khoản số tiền <span className="text-white font-black">{(loan.amount * 0.85).toLocaleString()} đ</span> cho khách hàng.
                                   </p>
                                 </div>
                                 <button 

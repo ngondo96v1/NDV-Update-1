@@ -74,21 +74,16 @@ const ContractModal: React.FC<ContractModalProps> = ({ contract, user, onClose }
               </div>
             </section>
 
-            {/* Điều 2: Đối tượng */}
+            {/* Điều 2: Chi tiết khoản vay */}
             <section className="space-y-1.5 flex-none">
               <div className="flex items-center gap-1.5">
                 <div className="w-4 h-4 bg-black rounded flex items-center justify-center text-white font-black text-[7px]">02</div>
-                <h4 className="text-[10px] font-black text-black uppercase tracking-widest">Đối tượng hợp đồng</h4>
+                <h4 className="text-[10px] font-black text-black uppercase tracking-widest">Chi tiết khoản vay</h4>
               </div>
-              <div className="bg-gray-50 border border-gray-100 rounded-lg p-2.5 flex items-center justify-between shadow-sm">
-                <div className="flex flex-col">
+              <div className="bg-gray-50 border border-gray-100 rounded-lg p-2.5 flex items-center justify-center shadow-sm">
+                <div className="flex flex-col items-center">
                   <span className="text-[7px] font-black text-gray-400 uppercase tracking-wider">Số tiền vay gốc</span>
-                  <span className="text-[12px] font-black text-black">{contract.amount.toLocaleString()} đ</span>
-                </div>
-                <div className="h-6 w-px bg-gray-200"></div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[7px] font-black text-orange-500 uppercase tracking-wider">Thực nhận</span>
-                  <span className="text-[12px] font-black text-orange-600">{(contract.amount * 0.85).toLocaleString()} đ</span>
+                  <span className="text-[14px] font-black text-black">{contract.amount.toLocaleString()} đ</span>
                 </div>
               </div>
             </section>

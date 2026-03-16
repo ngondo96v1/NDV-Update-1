@@ -425,7 +425,7 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
                 <div className="flex gap-2.5">
                   <div className="w-4 h-4 bg-[#ff8c00] rounded-full flex items-center justify-center shrink-0 font-black text-[9px] text-black">1</div>
                   <p className="text-[9px] font-bold text-gray-300 leading-tight">
-                    <span className="text-[#ff8c00]">Phí dịch vụ:</span> 15% khấu trừ trực tiếp vào số tiền nhận.
+                    <span className="text-[#ff8c00]">Lãi suất:</span> 0% cho toàn bộ kỳ hạn vay.
                   </p>
                 </div>
                 <div className="flex gap-2.5">
@@ -632,7 +632,7 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
             <p className="text-2xl font-black text-[#ff8c00] tracking-tighter">
               {selectedAmount.toLocaleString()} <span className="text-sm">đ</span>
             </p>
-            <p className="text-[8px] font-black text-orange-500 uppercase tracking-widest">Phí 15% (Khấu trừ trực tiếp khi giải ngân)</p>
+            <p className="text-[8px] font-black text-orange-500 uppercase tracking-widest">Lãi suất 0% (Ưu đãi cho thành viên mới)</p>
           </div>
 
           {isLimitedByBudget && (
@@ -1022,21 +1022,16 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
               </div>
             </section>
 
-            {/* Điều 2: Đối tượng */}
+            {/* Điều 2: Chi tiết khoản vay */}
             <section className="space-y-1.5 flex-none">
               <div className="flex items-center gap-1.5">
                 <div className="w-4 h-4 bg-black rounded flex items-center justify-center text-white font-black text-[7px]">02</div>
-                <h4 className="text-[10px] font-black text-black uppercase tracking-widest">Đối tượng hợp đồng</h4>
+                <h4 className="text-[10px] font-black text-black uppercase tracking-widest">Chi tiết khoản vay</h4>
               </div>
-              <div className="bg-gray-50 border border-gray-100 rounded-lg p-2.5 flex items-center justify-between shadow-sm">
-                <div className="flex flex-col">
+              <div className="bg-gray-50 border border-gray-100 rounded-lg p-2.5 flex items-center justify-center shadow-sm">
+                <div className="flex flex-col items-center">
                   <span className="text-[7px] font-black text-gray-400 uppercase tracking-wider">Số tiền vay gốc</span>
-                  <span className="text-[12px] font-black text-black">{selectedAmount.toLocaleString()} đ</span>
-                </div>
-                <div className="h-6 w-px bg-gray-200"></div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[7px] font-black text-orange-500 uppercase tracking-wider">Thực nhận</span>
-                  <span className="text-[12px] font-black text-orange-600">{(selectedAmount * 0.85).toLocaleString()} đ</span>
+                  <span className="text-[14px] font-black text-black">{selectedAmount.toLocaleString()} đ</span>
                 </div>
               </div>
             </section>
