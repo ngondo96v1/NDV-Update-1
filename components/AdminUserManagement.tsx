@@ -51,6 +51,54 @@ interface AdminUserManagementProps {
   onBack: () => void;
 }
 
+const BANK_BINS: Record<string, string> = {
+  "VIETCOMBANK": "970436",
+  "VIETINBANK": "970415",
+  "BIDV": "970418",
+  "AGRIBANK": "970405",
+  "MB BANK": "970422",
+  "TECHCOMBANK": "970407",
+  "VPBANK": "970432",
+  "ACB": "970416",
+  "SACOMBANK": "970403",
+  "HDBANK": "970437",
+  "VIB": "970441",
+  "TPBANK": "970423",
+  "SHB": "970443",
+  "MSB": "970426",
+  "SEABANK": "970440",
+  "OCB": "970448",
+  "LIENVIETPOSTBANK": "970449",
+  "EXIMBANK": "970431",
+  "ABBANK": "970425",
+  "BACA BANK": "970409",
+  "VIET CAPITAL BANK": "970454",
+  "VIETBANK": "970433",
+  "NAM A BANK": "970428",
+  "PVCOMBANK": "970412",
+  "DONG A BANK": "970406",
+  "NCB": "970419",
+  "KIENLONG BANK": "970442",
+  "SAIGONBANK": "970400",
+  "PG BANK": "970424",
+  "VIET A BANK": "970427",
+  "WOORI BANK": "970446",
+  "SHINHAN BANK": "970441",
+  "CAKE": "970432",
+  "TIMO": "970454",
+  "TNEX": "970426",
+  "LOMO": "970432",
+  "KASIKORNBANK": "970457",
+  "CITIBANK": "970447",
+  "HSBC": "970445",
+  "STANDARD CHARTERED": "970444",
+  "PUBLIC BANK": "970439",
+  "CIMB": "970450",
+  "UOB": "970451",
+  "INDOVINA BANK": "970402",
+  "VRB": "970421"
+};
+
 const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, loans, isGlobalProcessing, onAction, onLoanAction, onDeleteUser, onAutoCleanup, onBack }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
@@ -586,6 +634,35 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, loans,
                                         <div className="flex justify-between items-center">
                                           <span className="text-[6px] font-black text-gray-600 uppercase">Chủ tài khoản:</span>
                                           <span className="text-[8px] font-black text-white uppercase">{u.bankAccountHolder}</span>
+                                        </div>
+
+                                        {/* VietQR for Disbursement */}
+                                        <div className="pt-3 flex flex-col items-center gap-2 border-t border-white/5 mt-2">
+                                          <div className="flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 bg-[#ff8c00] rounded-full animate-pulse"></div>
+                                            <p className="text-[7px] font-black text-[#ff8c00] uppercase tracking-widest">Quét mã giải ngân nhanh</p>
+                                          </div>
+                                          <div className="bg-white p-2 rounded-xl shadow-lg group/qr relative">
+                                            <img 
+                                              src={`https://img.vietqr.io/image/${BANK_BINS[u.bankName || ""] || "970436"}-${u.bankAccountNumber}-compact2.png?amount=${Math.round(loan.amount * 0.85)}&addInfo=${encodeURIComponent(`CKNDV-${loan.id}`)}&accountName=${encodeURIComponent(u.bankAccountHolder || "")}`} 
+                                              alt="VietQR Disbursement" 
+                                              className="w-32 h-32 object-contain"
+                                              referrerPolicy="no-referrer"
+                                            />
+                                            <button 
+                                              onClick={() => {
+                                                const url = `https://img.vietqr.io/image/${BANK_BINS[u.bankName || ""] || "970436"}-${u.bankAccountNumber}-compact2.png?amount=${Math.round(loan.amount * 0.85)}&addInfo=${encodeURIComponent(`CKNDV-${loan.id}`)}&accountName=${encodeURIComponent(u.bankAccountHolder || "")}`;
+                                                window.open(url, '_blank');
+                                              }}
+                                              className="absolute inset-0 bg-black/40 opacity-0 group-hover/qr:opacity-100 transition-opacity flex items-center justify-center rounded-xl"
+                                            >
+                                              <Maximize2 size={20} className="text-white" />
+                                            </button>
+                                          </div>
+                                          <div className="flex flex-col items-center">
+                                            <p className="text-[6px] font-bold text-gray-500 uppercase">Thực nhận: {Math.round(loan.amount * 0.85).toLocaleString()} đ</p>
+                                            <p className="text-[5px] font-black text-blue-400 uppercase tracking-tighter mt-0.5">Nội dung: CKNDV-{loan.id}</p>
+                                          </div>
                                         </div>
                                       </div>
                                     ) : (

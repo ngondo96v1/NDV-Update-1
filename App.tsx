@@ -97,9 +97,18 @@ const App: React.FC = () => {
     return !!(u.bankName && u.bankAccountNumber && u.bankAccountHolder);
   };
 
+  const deduplicateNotifications = (notifs: Notification[]) => {
+    const seen = new Set();
+    return notifs.filter(n => {
+      if (!n.id || seen.has(n.id)) return false;
+      seen.add(n.id);
+      return true;
+    });
+  };
+
   const addNotification = async (userId: string, title: string, message: string, type: 'LOAN' | 'RANK' | 'SYSTEM') => {
     const newNotif: Notification = {
-      id: `NOTIF-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: `NOTIF-${Date.now()}-${Math.floor(Math.random() * 10000)}-${Math.random().toString(36).substring(2, 9)}`,
       userId,
       title,
       message,
@@ -108,19 +117,20 @@ const App: React.FC = () => {
       type
     };
     
-    const newNotifs = [newNotif, ...notifications].slice(0, 3);
-    setNotifications(newNotifs);
-
-    // Sync notification to server immediately
-    try {
-      await fetch('/api/notifications', {
+    setNotifications(prev => {
+      const exists = prev.some(n => n.id === newNotif.id);
+      if (exists) return prev;
+      const next = [newNotif, ...prev].slice(0, 10); // Keep more than 3 for safety, Dashboard/Modal will slice for display
+      
+      // Sync notification to server immediately
+      fetch('/api/notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newNotifs)
-      });
-    } catch (e) {
-      console.error("Lỗi lưu thông báo:", e);
-    }
+        body: JSON.stringify(next.slice(0, 3))
+      }).catch(e => console.error("Lỗi lưu thông báo:", e));
+      
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -195,7 +205,7 @@ const App: React.FC = () => {
         });
         if (data.loans) setLoans(data.loans);
         if (data.users) setRegisteredUsers(data.users);
-        if (data.notifications) setNotifications(data.notifications.slice(0, 3));
+        if (data.notifications) setNotifications(deduplicateNotifications(data.notifications).slice(0, 10));
         if (data.budget !== undefined) setSystemBudget(data.budget);
         if (data.rankProfit !== undefined) setRankProfit(data.rankProfit);
         if (data.loanProfit !== undefined) setLoanProfit(data.loanProfit);
@@ -277,7 +287,10 @@ const App: React.FC = () => {
 
     socket.on('notification_updated', (notif: Notification) => {
       console.log('[REALTIME] Notification received');
-      setNotifications(prev => [notif, ...prev].slice(0, 3));
+      setNotifications(prev => {
+        if (prev.some(n => n.id === notif.id)) return prev;
+        return [notif, ...prev].slice(0, 10);
+      });
     });
 
     socket.on('config_updated', (configs: any[]) => {
@@ -1273,7 +1286,7 @@ const App: React.FC = () => {
       
       if (data.users) setRegisteredUsers(data.users);
       if (data.loans) setLoans(data.loans);
-      if (data.notifications) setNotifications(data.notifications);
+      if (data.notifications) setNotifications(deduplicateNotifications(data.notifications));
       if (data.budget !== undefined) setSystemBudget(data.budget);
       if (data.rankProfit !== undefined) setRankProfit(data.rankProfit);
       if (data.loanProfit !== undefined) setLoanProfit(data.loanProfit);
