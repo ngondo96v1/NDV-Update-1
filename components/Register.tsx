@@ -18,6 +18,8 @@ import {
 import { User as UserType } from '../types';
 import { compressImage } from '../utils';
 
+import TermsModal from './TermsModal';
+
 interface RegisterProps {
   onBack: () => void;
   onRegister: (userData: Partial<UserType>) => Promise<void> | void;
@@ -35,12 +37,14 @@ const Register: React.FC<RegisterProps> = ({ onBack, onRegister, onClearError, e
     confirmPassword: '',
     refZalo: '',
     relationship: '',
-    isCommitted: false
+    isCommitted: false,
+    isTermsAccepted: false
   });
 
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [tooltips, setTooltips] = useState<Record<string, boolean>>({});
   
   const [idFront, setIdFront] = useState<string | null>(null);
@@ -74,6 +78,7 @@ const Register: React.FC<RegisterProps> = ({ onBack, onRegister, onClearError, e
     formData.refZalo.length === 10 &&
     formData.relationship &&
     formData.isCommitted &&
+    formData.isTermsAccepted &&
     idFront &&
     idBack;
 
@@ -398,17 +403,32 @@ const Register: React.FC<RegisterProps> = ({ onBack, onRegister, onClearError, e
           </div>
         </div>
 
-        <div className="flex items-center gap-3 pt-4 px-1.5">
-          <button 
-            type="button"
-            onClick={() => setFormData({...formData, isCommitted: !formData.isCommitted})}
-            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${formData.isCommitted ? 'bg-[#ff8c00] border-[#ff8c00]' : 'border-gray-800 bg-transparent'}`}
-          >
-            {formData.isCommitted && <CheckCircle2 size={14} color="black" />}
-          </button>
-          <span className="text-[8px] font-bold text-gray-500 leading-tight uppercase tracking-tighter">
-            Tôi cam kết thông tin cá nhân và ảnh CCCD là chính xác.
-          </span>
+        <div className="space-y-2.5 pt-4 px-1.5">
+          <div className="flex items-center gap-3">
+            <button 
+              type="button"
+              onClick={() => setFormData({...formData, isCommitted: !formData.isCommitted})}
+              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${formData.isCommitted ? 'bg-[#ff8c00] border-[#ff8c00]' : 'border-gray-800 bg-transparent'}`}
+            >
+              {formData.isCommitted && <CheckCircle2 size={14} color="black" />}
+            </button>
+            <span className="text-[8px] font-bold text-gray-500 leading-tight uppercase tracking-tighter">
+              Tôi cam kết thông tin cá nhân và ảnh CCCD là chính xác.
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button 
+              type="button"
+              onClick={() => setFormData({...formData, isTermsAccepted: !formData.isTermsAccepted})}
+              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${formData.isTermsAccepted ? 'bg-[#ff8c00] border-[#ff8c00]' : 'border-gray-800 bg-transparent'}`}
+            >
+              {formData.isTermsAccepted && <CheckCircle2 size={14} color="black" />}
+            </button>
+            <span className="text-[8px] font-bold text-gray-500 leading-tight uppercase tracking-tighter">
+              Tôi đã đọc và đồng ý với <button type="button" onClick={() => setShowTermsModal(true)} className="text-[#ff8c00] underline">Điều khoản sử dụng</button> của NDV Money.
+            </span>
+          </div>
         </div>
 
           <button
@@ -430,6 +450,11 @@ const Register: React.FC<RegisterProps> = ({ onBack, onRegister, onClearError, e
       >
         Đã có tài khoản? <span className="text-gray-400">Đăng Nhập</span>
       </button>
+
+      {/* Terms Modal */}
+      {showTermsModal && (
+        <TermsModal onClose={() => setShowTermsModal(false)} />
+      )}
 
       {/* Confirmation Popup */}
       {showConfirmPopup && (

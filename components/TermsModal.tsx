@@ -1,15 +1,6 @@
 
 import React from 'react';
-import { 
-  X, 
-  ShieldCheck, 
-  Scale, 
-  Clock, 
-  AlertCircle, 
-  ShieldAlert, 
-  ArrowUpCircle, 
-  ArrowDownCircle 
-} from 'lucide-react';
+import { X, ShieldCheck, FileText, AlertCircle, Lock } from 'lucide-react';
 
 interface TermsModalProps {
   onClose: () => void;
@@ -17,119 +8,106 @@ interface TermsModalProps {
 
 const TermsModal: React.FC<TermsModalProps> = ({ onClose }) => {
   return (
-    <div className="fixed inset-0 z-[9999] bg-black flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-500 max-w-md mx-auto">
-      {/* Top Header Controls */}
-      <div className="w-full px-6 pt-8 pb-4 flex items-center justify-between bg-black text-white">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-[#ff8c00]">
-            <Scale size={24} />
-          </div>
-          <div>
-            <h3 className="text-xs font-black uppercase tracking-widest leading-none">Chính sách & Điều khoản</h3>
-            <p className="text-[8px] font-bold text-gray-500 uppercase mt-1 tracking-tighter">NDV Money Pro V1.26</p>
-          </div>
-        </div>
-        <button 
-          onClick={onClose}
-          className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-gray-400 hover:text-white"
-        >
-          <X size={24} />
-        </button>
-      </div>
-
-      {/* Content Container */}
-      <div className="flex-1 bg-black px-5 overflow-y-auto pb-32">
-        <div className="bg-white w-full rounded-[2.5rem] p-10 relative overflow-hidden shadow-2xl min-h-full">
-          
-          {/* Card Header */}
-          <div className="flex flex-col items-center space-y-6">
-            <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center text-[#ff8c00] font-black text-xl shadow-lg">
-              NDV
+    <div className="fixed inset-0 z-[2000] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="bg-[#111111] w-full max-w-lg rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#ff8c00]/10 rounded-xl flex items-center justify-center text-[#ff8c00]">
+              <FileText size={20} />
             </div>
-            <div className="text-center space-y-1">
-              <h2 className="text-xl font-black text-black tracking-tighter uppercase leading-tight">Quy chế vận hành & Nghĩa vụ</h2>
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-tighter">Điều khoản sử dụng</h3>
+              <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest">Cập nhật: 16/03/2026</p>
             </div>
           </div>
-
-          <div className="w-full h-px bg-gray-100 my-10"></div>
-
-          {/* Clauses */}
-          <div className="space-y-12 px-1 pb-10">
-            <section className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Scale size={18} className="text-[#ff8c00]" />
-                <h4 className="text-[11px] font-black text-black uppercase tracking-widest">1. Điều khoản sử dụng</h4>
-              </div>
-              <p className="pl-7 text-xs font-bold text-gray-600 leading-relaxed">
-                Người dùng cam kết cung cấp thông tin định danh chính chủ. Việc sử dụng thông tin giả mạo sẽ dẫn đến khóa tài khoản vĩnh viễn.
-              </p>
-            </section>
-
-            <section className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Clock size={18} className="text-[#ff8c00]" />
-                <h4 className="text-[11px] font-black text-black uppercase tracking-widest">2. Thời hạn trả</h4>
-              </div>
-              <p className="pl-7 text-xs font-bold text-gray-600 leading-relaxed">
-                Các khoản vay phải được tất toán chậm nhất vào <span className="text-black font-black underline decoration-gray-200">ngày 01 hàng tháng</span>. Hệ thống sẽ tự động quét dư nợ vào lúc 00:00 cùng ngày.
-              </p>
-            </section>
-
-            <section className="space-y-3">
-              <div className="flex items-center gap-3">
-                <AlertCircle size={18} className="text-red-500" />
-                <h4 className="text-[11px] font-black text-red-600 uppercase tracking-widest">3. Phí phạt chậm trả</h4>
-              </div>
-              <p className="pl-7 text-xs font-bold text-gray-600 leading-relaxed">
-                Hệ thống tự động áp dụng phí phạt <span className="text-red-600 font-black">0.1%/ngày</span> tính trên dư nợ gốc thực tế. <br/>
-                <span className="font-black italic">GIỚI HẠN:</span> Tổng phí phạt tối đa không vượt quá <span className="text-red-600 font-black">30% số tiền gốc</span> vay ban đầu. Phí sẽ ngừng phát sinh khi đạt ngưỡng này.
-              </p>
-            </section>
-
-            <section className="space-y-3">
-              <div className="flex items-center gap-3">
-                <ShieldAlert size={18} className="text-[#ff8c00]" />
-                <h4 className="text-[11px] font-black text-black uppercase tracking-widest">4. Nghĩa vụ hoàn trả</h4>
-              </div>
-              <p className="pl-7 text-xs font-bold text-gray-600 leading-relaxed">
-                Bên vay có nghĩa vụ hoàn trả đúng và đủ số nợ gốc kèm lãi, phí phạt (nếu có) theo đúng cam kết.
-              </p>
-            </section>
-
-            <section className="space-y-3">
-              <div className="flex items-center gap-3">
-                <ArrowUpCircle size={18} className="text-green-500" />
-                <h4 className="text-[11px] font-black text-black uppercase tracking-widest">5. Nâng cấp hạng</h4>
-              </div>
-              <p className="pl-7 text-xs font-bold text-gray-600 leading-relaxed">
-                <span className="font-black">Tự động:</span> Hoàn thành <span className="text-green-600 font-black">10 lần thanh toán đúng hạn</span> để tự động lên hạng tiếp theo.
-              </p>
-            </section>
-
-            <section className="space-y-3">
-              <div className="flex items-center gap-3">
-                <ArrowDownCircle size={18} className="text-red-500" />
-                <h4 className="text-[11px] font-black text-black uppercase tracking-widest">6. Xuống hạng</h4>
-              </div>
-              <p className="pl-7 text-xs font-bold text-gray-600 leading-relaxed">
-                Mỗi <span className="text-red-600 font-black">01 ngày trễ hạn</span>, hệ thống sẽ <span className="text-red-600 font-black">trừ 01 điểm tiến trình</span>. Khi điểm về 0, tài khoản sẽ tự động bị <span className="text-red-600 font-black">xuống hạng thấp hơn</span>.
-              </p>
-            </section>
-          </div>
-
-          <div className="w-full h-px bg-gray-100 my-8"></div>
-          <p className="text-center text-[8px] font-black text-gray-300 uppercase tracking-widest">Cập nhật chính sách: 2024</p>
+          <button 
+            onClick={onClose}
+            className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-gray-500 hover:text-white transition-all"
+          >
+            <X size={20} />
+          </button>
         </div>
-      </div>
 
-      {/* Footer Action */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-black z-[10000] border-t border-white/5 max-w-md mx-auto">
-        <button 
-          onClick={onClose}
-          className="w-full py-5 rounded-2xl bg-white text-black font-black text-[11px] uppercase tracking-[0.1em] active:scale-95 transition-all shadow-xl"
-        >
-          Xác nhận đã hiểu điều khoản
-        </button>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-[#ff8c00]">
+              <ShieldCheck size={14} />
+              <h4 className="text-[10px] font-black uppercase tracking-widest">1. QUY ĐỊNH CHUNG</h4>
+            </div>
+            <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
+              Bằng việc đăng ký tài khoản tại NDV Money, khách hàng (sau đây gọi là "Bên vay") thừa nhận đã đọc, hiểu và đồng ý tuân thủ toàn bộ các điều khoản và điều kiện được quy định tại đây. NDV Money có quyền thay đổi nội dung điều khoản mà không cần thông báo trước, các thay đổi sẽ có hiệu lực ngay khi được cập nhật trên ứng dụng.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-[#ff8c00]">
+              <Lock size={14} />
+              <h4 className="text-[10px] font-black uppercase tracking-widest">2. BẢO MẬT THÔNG TIN</h4>
+            </div>
+            <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
+              NDV Money cam kết bảo mật tuyệt đối thông tin cá nhân, hình ảnh CCCD và dữ liệu giao dịch của khách hàng. Chúng tôi chỉ sử dụng thông tin này cho mục đích xác thực danh tính, đánh giá tín nhiệm và thực hiện các thủ tục giải ngân theo yêu cầu của khách hàng. Thông tin sẽ không được cung cấp cho bên thứ ba trừ khi có yêu cầu từ cơ quan pháp luật có thẩm quyền.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-[#ff8c00]">
+              <AlertCircle size={14} />
+              <h4 className="text-[10px] font-black uppercase tracking-widest">3. TRÁCH NHIỆM CỦA KHÁCH HÀNG</h4>
+            </div>
+            <ul className="space-y-2">
+              <li className="flex gap-2">
+                <div className="w-1 h-1 bg-[#ff8c00] rounded-full mt-1.5 shrink-0"></div>
+                <p className="text-[10px] text-gray-400 leading-relaxed font-medium">Cung cấp thông tin cá nhân, số điện thoại Zalo và hình ảnh CCCD chính chủ, rõ nét, không qua chỉnh sửa.</p>
+              </li>
+              <li className="flex gap-2">
+                <div className="w-1 h-1 bg-[#ff8c00] rounded-full mt-1.5 shrink-0"></div>
+                <p className="text-[10px] text-gray-400 leading-relaxed font-medium">Chịu trách nhiệm hoàn toàn trước pháp luật về tính chính xác của thông tin đã cung cấp. Mọi hành vi gian lận thông tin sẽ bị từ chối giải ngân vĩnh viễn.</p>
+              </li>
+              <li className="flex gap-2">
+                <div className="w-1 h-1 bg-[#ff8c00] rounded-full mt-1.5 shrink-0"></div>
+                <p className="text-[10px] text-gray-400 leading-relaxed font-medium">Thực hiện nghĩa vụ thanh toán khoản vay đúng hạn theo thỏa thuận trên hợp đồng điện tử.</p>
+              </li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-[#ff8c00]">
+              <ShieldCheck size={14} />
+              <h4 className="text-[10px] font-black uppercase tracking-widest">4. QUY TRÌNH GIẢI NGÂN & PHÍ</h4>
+            </div>
+            <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
+              Khoản vay sẽ được giải ngân vào tài khoản ngân hàng chính chủ của khách hàng sau khi hồ sơ được phê duyệt. Khách hàng đồng ý với mức phí dịch vụ và lãi suất được hiển thị minh bạch tại thời điểm đăng ký khoản vay. Số tiền thực nhận có thể được khấu trừ phí dịch vụ ban đầu tùy theo hạng thành viên.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-red-500">
+              <AlertCircle size={14} />
+              <h4 className="text-[10px] font-black uppercase tracking-widest">5. XỬ LÝ VI PHẠM</h4>
+            </div>
+            <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
+              Trong trường hợp khách hàng chậm thanh toán, hệ thống sẽ tự động áp dụng phí phạt quá hạn (không quá 30% giá trị khoản vay) và thực hiện hạ hạng thành viên. NDV Money có quyền chuyển hồ sơ cho bộ phận thu hồi nợ hoặc cơ quan pháp luật nếu khách hàng có dấu hiệu cố tình chiếm đoạt tài sản.
+            </p>
+          </section>
+
+          <div className="bg-[#ff8c00]/5 border border-[#ff8c00]/10 rounded-2xl p-4">
+            <p className="text-[9px] font-bold text-[#ff8c00] text-center leading-relaxed italic">
+              "NDV Money - Uy tín tạo niềm tin. Chúng tôi luôn đồng hành cùng bạn trong mọi khó khăn tài chính."
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-white/5 shrink-0">
+          <button 
+            onClick={onClose}
+            className="w-full py-4 bg-[#ff8c00] text-black font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl active:scale-95 transition-all shadow-xl shadow-orange-950/20"
+          >
+            Tôi đã hiểu và đồng ý
+          </button>
+        </div>
       </div>
     </div>
   );
