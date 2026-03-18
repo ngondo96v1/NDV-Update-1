@@ -93,8 +93,8 @@ const TermsModal: React.FC<TermsModalProps> = ({ onClose }) => {
           </section>
 
           <div className="bg-[#ff8c00]/5 border border-[#ff8c00]/10 rounded-2xl p-4">
-            <p className="text-[9px] font-bold text-[#ff8c00] text-center leading-relaxed italic">
-              "NDV Money - Uy tín tạo niềm tin. Chúng tôi luôn đồng hành cùng bạn trong mọi khó khăn tài chính."
+            <p className="text-[9px] font-bold text-[#ff8c00] text-center whitespace-nowrap italic">
+              "NDV Money - Uy tín tạo niềm tin, đồng hành cùng bạn."
             </p>
           </div>
         </div>

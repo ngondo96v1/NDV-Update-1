@@ -753,9 +753,9 @@ const LoanApplication: React.FC<LoanApplicationProps> = ({ user, loans, systemBu
         </div>
 
         {isSecondPrincipal && settleType === 'PRINCIPAL' && (
-          <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 flex items-center justify-center animate-in slide-in-from-top-2 duration-300">
-            <p className="text-[8px] font-black text-orange-200 uppercase tracking-wider text-center">
-              Lưu ý: Đây là lần gia hạn cuối cùng, vui lòng tất toán ở kỳ hạn sau.
+          <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl py-2 px-1 flex items-center justify-center animate-in slide-in-from-top-2 duration-300">
+            <p className="text-[7px] font-black text-orange-200 uppercase tracking-tighter text-center whitespace-nowrap">
+              Lần gia hạn cuối, vui lòng tất toán ở kỳ sau.
             </p>
           </div>
         )}
